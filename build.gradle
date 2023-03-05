@@ -1,0 +1,29 @@
+apply plugin: 'java'
+
+// Use Maven (because Burp Extender is on Maven)
+repositories {
+     mavenCentral()
+}
+
+dependencies {
+    implementation 'net.portswigger.burp.extender:burp-extender-api:2.1'
+    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.myjeeva.digitalocean:digitalocean-api-client:2.17'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+}
+
+// Create a task for bundling all dependencies into a jar file.
+task bigJar(type: Jar) {
+    archiveBaseName = project.name + '-all'
+    duplicatesStrategy = 'include'
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
