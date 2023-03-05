@@ -6,4 +6,5 @@ build
 bin
 
 # Ignore Visual Studio Code settings for now because they're user-based
-.vscode
+.vscode/tasks.json
+.vscode/launch.json
