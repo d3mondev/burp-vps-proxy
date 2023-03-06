@@ -1,5 +1,7 @@
 package burp;
 
+import vpsproxy.VPSProxy;
+
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private IBurpExtenderCallbacks callbacks;
 
@@ -8,18 +10,18 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         this.callbacks = callbacks;
 
         // Set our extension name
-        this.callbacks.setExtensionName("VPS Proxy");
+        callbacks.setExtensionName("VPS Proxy");
 
         // Register callback to destroy VPS when our extension is unloaded
-        this.callbacks.registerExtensionStateListener(this);
+        callbacks.registerExtensionStateListener(this);
 
-        // Create new pane for the extension
-        ITab optionsTab = new VPSProxyTab(callbacks);
-        this.callbacks.addSuiteTab(optionsTab);
+        // Create our main extension object
+        VPSProxy extension = new VPSProxy(callbacks);
+        callbacks.addSuiteTab(extension.getUI());
     }
 
     @Override
     public void extensionUnloaded() {
-        this.callbacks.printOutput("extension unloaded");
+        callbacks.printOutput("extension unloaded");
     }
 }
