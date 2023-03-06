@@ -26,12 +26,12 @@ public class AWSProvider implements Provider {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-        JLabel awsKeyLabel = new JLabel("AWS Key:");
-        awsKeyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel awsAccessKeyLabel = new JLabel("AWS Access Key:");
+        awsAccessKeyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JTextField awsKeyTextField = new JTextField();
-        awsKeyTextField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        awsKeyTextField.setPreferredSize(new Dimension(200, awsKeyTextField.getPreferredSize().height));
+        JTextField awsAccessKeyTextField = new JTextField();
+        awsAccessKeyTextField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        awsAccessKeyTextField.setPreferredSize(new Dimension(200, awsAccessKeyTextField.getPreferredSize().height));
 
         JLabel awsSecretKeyLabel = new JLabel("AWS Secret Key:");
         awsSecretKeyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -40,9 +40,9 @@ public class AWSProvider implements Provider {
         awsSecretKeyTextField.setAlignmentX(Component.LEFT_ALIGNMENT);
         awsSecretKeyTextField.setPreferredSize(new Dimension(200, awsSecretKeyTextField.getPreferredSize().height));
 
-        panel.add(awsKeyLabel);
+        panel.add(awsAccessKeyLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
-        panel.add(awsKeyTextField);
+        panel.add(awsAccessKeyTextField);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(awsSecretKeyLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
