@@ -12,6 +12,8 @@ public class VPSProxy {
     private Map<String, Provider> providerMap;
 
     public VPSProxy(IBurpExtenderCallbacks callbacks) {
+        Logger.log("starting");
+
         providerMap = new HashMap<String, Provider>();
 
         Provider awsProvider = new AWSProvider(callbacks);
@@ -21,9 +23,23 @@ public class VPSProxy {
         providerMap.put(digitalOceanProvider.getName(), digitalOceanProvider);
 
         optionsTab = new OptionsTab(callbacks, providerMap);
+
+        Logger.init(callbacks.getStdout(), optionsTab);
+
+        Logger.log("hello");
     }
 
     public OptionsTab getUI() {
         return optionsTab;
+    }
+
+    public void close() {
+        Logger.log("closing");
+
+        Provider currentProvider = optionsTab.getSelectedProvider();
+        if (currentProvider != null) {
+            Logger.log("destroying instance");
+            currentProvider.destroyInstance();
+        }
     }
 }

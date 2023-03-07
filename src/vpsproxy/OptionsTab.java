@@ -5,8 +5,6 @@ import burp.IBurpExtenderCallbacks;
 import burp.ITab;
 import java.awt.*;
 import java.awt.event.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import vpsproxy.providers.Provider;
 
@@ -147,7 +145,7 @@ public class OptionsTab implements ITab {
         return this.panel;
     }
 
-    public void log(String text) {
+    public void log(String message) {
         JScrollBar verticalBar = logScrollPane.getVerticalScrollBar();
         boolean autoScroll = verticalBar.getValue() == verticalBar.getMaximum();
 
@@ -165,11 +163,7 @@ public class OptionsTab implements ITab {
             verticalBar.addAdjustmentListener(scroller);
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String timestamp = now.format(formatter);
-
-        logTextArea.append(String.format("[%s] %s\n", timestamp, text));
+        logTextArea.append(message);
     }
 
     private void installHandlers() {
@@ -227,7 +221,7 @@ public class OptionsTab implements ITab {
         });
     }
 
-    private Provider getSelectedProvider() {
+    protected Provider getSelectedProvider() {
         Object selectedItem = providerComboBox.getSelectedItem();
         if (selectedItem == null) {
             return null;
