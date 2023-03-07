@@ -18,6 +18,11 @@ public class AWSProvider implements Provider {
     }
 
     @Override
+    public String getName() {
+        return "AWS EC2";
+    }
+
+    @Override
     public void startInstance() {
         // implementation for starting a DigitalOcean instance
     }
@@ -28,8 +33,8 @@ public class AWSProvider implements Provider {
     }
 
     @Override
-    public String getName() {
-        return "AWS EC2";
+    public ProviderStatus getStatus() {
+        return ProviderStatus.STOPPED;
     }
 
     @Override

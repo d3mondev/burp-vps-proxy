@@ -17,6 +17,11 @@ public class DigitalOceanProvider implements Provider {
     }
 
     @Override
+    public String getName() {
+        return "DigitalOcean";
+    }
+
+    @Override
     public void startInstance() {
         // implementation for starting a DigitalOcean instance
     }
@@ -27,8 +32,8 @@ public class DigitalOceanProvider implements Provider {
     }
 
     @Override
-    public String getName() {
-        return "DigitalOcean";
+    public ProviderStatus getStatus() {
+        return ProviderStatus.STOPPED;
     }
 
     @Override
