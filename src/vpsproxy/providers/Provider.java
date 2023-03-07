@@ -6,6 +6,7 @@ import vpsproxy.ProxySettings;
 public interface Provider {
     void startInstance();
     void destroyInstance();
-    ProxySettings getProxy();
+    String getName();
     JComponent getUI();
+    ProxySettings getProxy();
 }

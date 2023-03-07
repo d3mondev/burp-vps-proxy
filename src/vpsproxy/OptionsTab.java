@@ -10,21 +10,26 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import vpsproxy.providers.Provider;
 
-public class VPSProxyTab implements ITab {
+public class OptionsTab implements ITab {
     private Map<String, Provider> providerMap;
+    IBurpExtenderCallbacks callbacks;
 
     private JPanel panel;
+    private JPanel providerPanel;
     private JTextArea logTextArea;
     private JScrollPane logScrollPane;
     private JComboBox<String> providerComboBox;
+    private JButton deployButton;
+    private JButton stopButton;
 
     private Font defaultFont;
     private Font headerFont;
     private Color headerColor;
     private int gapSize = 25;
 
-    public VPSProxyTab(IBurpExtenderCallbacks callbacks, Map<String, Provider> providers) {
+    public OptionsTab(IBurpExtenderCallbacks callbacks, Map<String, Provider> providers) {
         providerMap = providers;
+        this.callbacks = callbacks;
 
         // Initialize fonts and colors
         JLabel defaultLabel = new JLabel();
@@ -57,15 +62,19 @@ public class VPSProxyTab implements ITab {
             providerComboBox.addItem(providerName);
         }
 
-        JButton deployButton = new JButton("Deploy");
-        JButton stopButton = new JButton("Stop");
+        String selectedProviderName = callbacks.loadExtensionSetting("SelectedProvider");
+        providerComboBox.setSelectedItem(selectedProviderName);
+
+        deployButton = new JButton("Deploy");
+        stopButton = new JButton("Stop");
+        stopButton.setEnabled(false);
 
         // Provider settings UI elements
         FlowLayout providerLayout = new FlowLayout(FlowLayout.LEFT);
         providerLayout.setHgap(0);
         providerLayout.setVgap(0);
 
-        JPanel providerPanel = new JPanel(providerLayout);
+        providerPanel = new JPanel(providerLayout);
         providerPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, 200));
 
         Provider currentProvider = getSelectedProvider();
@@ -125,50 +134,7 @@ public class VPSProxyTab implements ITab {
 
         this.panel.setLayout(layout);
 
-        // Event handlers
-        providerComboBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Provider selectedProvider = getSelectedProvider();
-                if (selectedProvider == null) {
-                    return;
-                }
-
-                // Replace the provider UI panel with the new provider UI
-                providerPanel.removeAll();
-                providerPanel.add(selectedProvider.getUI());
-                providerPanel.revalidate();
-                providerPanel.repaint();
-            }
-        });
-
-        deployButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                log("start");
-
-                Provider selectedProvider = getSelectedProvider();
-                if (selectedProvider == null) {
-                    return;
-                }
-
-                selectedProvider.startInstance();
-            }
-        });
-
-        stopButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                log("stop");
-
-                Provider selectedProvider = getSelectedProvider();
-                if (selectedProvider == null) {
-                    return;
-                }
-
-                selectedProvider.destroyInstance();
-            }
-        });
+        installHandlers();
     }
 
     @Override
@@ -204,6 +170,61 @@ public class VPSProxyTab implements ITab {
         String timestamp = now.format(formatter);
 
         logTextArea.append(String.format("[%s] %s\n", timestamp, text));
+    }
+
+    private void installHandlers() {
+        // Event handlers
+        providerComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Provider selectedProvider = getSelectedProvider();
+                if (selectedProvider == null) {
+                    return;
+                }
+
+                // Replace the provider UI panel with the new provider UI
+                providerPanel.removeAll();
+                providerPanel.add(selectedProvider.getUI());
+                providerPanel.revalidate();
+                providerPanel.repaint();
+
+                callbacks.saveExtensionSetting("SelectedProvider", selectedProvider.getName());
+            }
+        });
+
+        deployButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Provider selectedProvider = getSelectedProvider();
+                if (selectedProvider == null) {
+                    return;
+                }
+
+                selectedProvider.startInstance();
+
+                stopButton.setEnabled(true);
+                stopButton.requestFocusInWindow();
+                providerComboBox.setEnabled(false);
+                deployButton.setEnabled(false);
+            }
+        });
+
+        stopButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Provider selectedProvider = getSelectedProvider();
+                if (selectedProvider == null) {
+                    return;
+                }
+
+                selectedProvider.destroyInstance();
+
+                deployButton.setEnabled(true);
+                deployButton.requestFocusInWindow();
+                providerComboBox.setEnabled(true);
+                stopButton.setEnabled(false);
+            }
+        });
     }
 
     private Provider getSelectedProvider() {
