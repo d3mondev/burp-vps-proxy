@@ -1,7 +1,6 @@
 package vpsproxy;
 
 import javax.swing.*;
-import burp.IBurpExtenderCallbacks;
 import burp.ITab;
 import java.awt.*;
 import java.awt.event.*;
@@ -10,7 +9,7 @@ import vpsproxy.providers.Provider;
 
 public class OptionsTab implements ITab {
     private Map<String, Provider> providerMap;
-    IBurpExtenderCallbacks callbacks;
+    VPSProxy extension;
 
     private JPanel panel;
     private JPanel providerPanel;
@@ -25,13 +24,13 @@ public class OptionsTab implements ITab {
     private Color headerColor;
     private int gapSize = 25;
 
-    public OptionsTab(IBurpExtenderCallbacks callbacks, Map<String, Provider> providers) {
+    public OptionsTab(VPSProxy extension, Map<String, Provider> providers) {
         providerMap = providers;
-        this.callbacks = callbacks;
+        this.extension = extension;
 
         // Initialize fonts and colors
         JLabel defaultLabel = new JLabel();
-        callbacks.customizeUiComponent(defaultLabel);
+        extension.getCallbacks().customizeUiComponent(defaultLabel);
 
         defaultFont = defaultLabel.getFont();
         headerFont = defaultFont.deriveFont(Font.BOLD, defaultFont.getSize() + 2);
@@ -60,7 +59,7 @@ public class OptionsTab implements ITab {
             providerComboBox.addItem(providerName);
         }
 
-        String selectedProviderName = callbacks.loadExtensionSetting("SelectedProvider");
+        String selectedProviderName = extension.getCallbacks().loadExtensionSetting("SelectedProvider");
         providerComboBox.setSelectedItem(selectedProviderName);
 
         deployButton = new JButton("Deploy");
@@ -182,7 +181,7 @@ public class OptionsTab implements ITab {
                 providerPanel.revalidate();
                 providerPanel.repaint();
 
-                callbacks.saveExtensionSetting("SelectedProvider", selectedProvider.getName());
+                extension.getCallbacks().saveExtensionSetting("SelectedProvider", selectedProvider.getName());
             }
         });
 
@@ -194,12 +193,14 @@ public class OptionsTab implements ITab {
                     return;
                 }
 
-                selectedProvider.startInstance();
-
                 stopButton.setEnabled(true);
                 stopButton.requestFocusInWindow();
                 providerComboBox.setEnabled(false);
                 deployButton.setEnabled(false);
+
+                new Thread(() -> {
+                    extension.startInstance(selectedProvider);
+                }).start();
             }
         });
 
@@ -211,7 +212,7 @@ public class OptionsTab implements ITab {
                     return;
                 }
 
-                selectedProvider.destroyInstance();
+                extension.destroyInstance(selectedProvider);
 
                 deployButton.setEnabled(true);
                 deployButton.requestFocusInWindow();

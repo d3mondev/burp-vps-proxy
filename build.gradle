@@ -7,7 +7,6 @@ repositories {
 
 dependencies {
     implementation 'net.portswigger.burp.extender:burp-extender-api:2.1'
-    implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'com.myjeeva.digitalocean:digitalocean-api-client:2.17'
 }
 
@@ -15,6 +14,9 @@ sourceSets {
     main {
         java {
             srcDir 'src'
+        }
+        resources {
+            srcDir 'src/vpsproxy/resources'
         }
     }
 }

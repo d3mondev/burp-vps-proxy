@@ -23,24 +23,14 @@ public class AWSProvider implements Provider {
     }
 
     @Override
-    public void startInstance() {
+    public ProxySettings startInstance() {
         // implementation for starting a DigitalOcean instance
+        return null;
     }
 
     @Override
     public void destroyInstance() {
         // implementation for destroying a DigitalOcean instance
-    }
-
-    @Override
-    public ProviderStatus getStatus() {
-        return ProviderStatus.STOPPED;
-    }
-
-    @Override
-    public ProxySettings getProxy() {
-        // implementation for getting a DigitalOcean proxy
-        return new ProxySettings("aws.com", 8080, "user", "password", this);
     }
 
     @Override
