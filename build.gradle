@@ -1,6 +1,7 @@
-apply plugin: 'java'
+plugins {
+    id 'java'
+}
 
-// Use Maven (because Burp Extender is on Maven)
 repositories {
      mavenCentral()
 }
@@ -18,12 +19,11 @@ sourceSets {
             srcDir 'src'
         }
         resources {
-            srcDir 'src/vpsproxy/resources'
+            srcDir 'resources'
         }
     }
 }
 
-// Create a task for bundling all dependencies into a jar file.
 task bigJar(type: Jar) {
     archiveBaseName = project.name + '-all'
     duplicatesStrategy = 'include'
