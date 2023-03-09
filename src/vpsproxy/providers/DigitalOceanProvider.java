@@ -29,7 +29,7 @@ public class DigitalOceanProvider extends Provider {
 
     @Override
     public ProxySettings startInstance() throws IOException {
-        Logger.log("DigitalOcean: creating a new droplet");
+        log("creating a new droplet");
 
         DigitalOcean client = getClient();
         if (client == null) {
@@ -59,20 +59,20 @@ public class DigitalOceanProvider extends Provider {
                 attempts++;
 
                 if (attempts > 60) {
-                    Logger.log(String.format("DigitalOcean: droplet creation timed out"));
+                    log("droplet creation timed out");
                     client.deleteDroplet(droplet.getId());
-                    Logger.log(String.format("DigitalOcean: droplet deleted"));
+                    log("droplet deleted");
                     return null;
                 }
 
                 droplet = client.getDropletInfo(droplet.getId());
             }
         } catch (Exception e) {
-            Logger.log(String.format("DigitalOcean: %s", e.getMessage()));
+            log(e.getMessage());
             return null;
         }
 
-        Logger.log(String.format("DigitalOcean: droplet %s created", droplet.getName()));
+        logf("droplet %s created", droplet.getName());
 
         return new ProxySettings(droplet.getNetworks().getVersion4Networks().get(0).getIpAddress(), "1080", "burp-vps-proxy", password);
     }
@@ -90,11 +90,11 @@ public class DigitalOceanProvider extends Provider {
                 List<String> tags = droplet.getTags();
                 if (tags != null && tags.contains("burp-vps-proxy")) {
                     client.deleteDroplet(droplet.getId());
-                    Logger.log(String.format("DigitalOcean: droplet %s deleted", droplet.getName()));
+                    logf("droplet %s deleted", droplet.getName());
                 }
             }
         } catch (Exception e) {
-            Logger.log(String.format("DigitalOcean: %s", e.getMessage()));
+            log(e.getMessage());
             return;
         }
     }
@@ -141,7 +141,7 @@ public class DigitalOceanProvider extends Provider {
     private DigitalOcean getClient() {
         String apiKey = callbacks.loadExtensionSetting(apiKeySetting);
         if (apiKey == null) {
-            Logger.log(String.format("%s: no API key defined", getName()));
+            log("no API key defined");
             return null;
         }
 
@@ -149,7 +149,7 @@ public class DigitalOceanProvider extends Provider {
         try {
             client.getAccountInfo();
         } catch (Exception e) {
-            Logger.log(String.format("%s: %s", getName(), e.getMessage()));
+            log(e.getMessage());
             return null;
         }
 

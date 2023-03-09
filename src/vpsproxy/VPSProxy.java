@@ -59,8 +59,12 @@ public class VPSProxy {
     }
 
     protected void destroyInstance(Provider provider) {
-        provider.destroyInstance();
-        clearProxy();
+        try {
+            provider.destroyInstance();
+            clearProxy();
+        } catch (Exception e) {
+            Logger.log(e.getMessage());
+        }
     }
 
     protected void configureProxy(ProxySettings proxy) {
