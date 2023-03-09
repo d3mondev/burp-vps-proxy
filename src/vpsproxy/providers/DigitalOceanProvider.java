@@ -79,8 +79,6 @@ public class DigitalOceanProvider extends Provider {
 
     @Override
     public void destroyInstance() {
-        Logger.log("DigitalOcean: destroying instance");
-
         DigitalOcean client = getClient();
         if (client == null) {
             return;

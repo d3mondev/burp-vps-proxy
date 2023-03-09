@@ -9,6 +9,7 @@ import vpsproxy.providers.*;
 public class VPSProxy {
     private IBurpExtenderCallbacks callbacks;
     private OptionsTab optionsTab;
+    private boolean clearProxy;
 
     private Map<String, Provider> providerMap;
 
@@ -73,12 +74,20 @@ public class VPSProxy {
                     .replace("PASSWORD", proxy.getPassword());
 
         callbacks.loadConfigFromJson(config);
+
+        clearProxy = true;
     }
 
     protected void clearProxy() {
+        if (!clearProxy) {
+            return;
+        }
+
         Logger.log("Clearing proxy settings");
 
         String config = "{\"project_options\":{\"connections\":{\"socks_proxy\":{\"dns_over_socks\":false,\"host\":\"0.0.0.0\",\"password\":\"\",\"port\":1080,\"use_proxy\":false,\"use_user_options\":false,\"username\":\"\"}}}}";
         callbacks.loadConfigFromJson(config);
+
+        clearProxy = false;
     }
 }
