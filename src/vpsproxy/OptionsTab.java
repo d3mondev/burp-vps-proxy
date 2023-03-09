@@ -24,6 +24,8 @@ public class OptionsTab implements ITab {
     private Color headerColor;
     private int gapSize = 25;
 
+    Thread workerThread;
+
     public OptionsTab(VPSProxy extension, Map<String, Provider> providers) {
         providerMap = providers;
         this.extension = extension;
@@ -190,16 +192,23 @@ public class OptionsTab implements ITab {
             public void actionPerformed(ActionEvent e) {
                 Provider selectedProvider = getSelectedProvider();
                 if (selectedProvider == null) {
+                    Logger.log("No provider selected");
+                    return;
+                }
+
+                if (workerThread != null && workerThread.isAlive()) {
+                    Logger.log("Worker thread is already started!");
                     return;
                 }
 
                 setRunningState();
 
-                new Thread(() -> {
+                workerThread = new Thread(() -> {
                     if (!extension.startInstance(selectedProvider)) {
                         setStoppedState();
                     }
-                }).start();
+                });
+                workerThread.start();
             }
         });
 
@@ -208,6 +217,12 @@ public class OptionsTab implements ITab {
             public void actionPerformed(ActionEvent e) {
                 Provider selectedProvider = getSelectedProvider();
                 if (selectedProvider == null) {
+                    Logger.log("No provider selected");
+                    return;
+                }
+
+                if (workerThread != null && workerThread.isAlive()) {
+                    Logger.log("Wait for instance to finish deploying...");
                     return;
                 }
 
