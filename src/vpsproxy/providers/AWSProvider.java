@@ -7,6 +7,11 @@ import javax.swing.event.*;
 import burp.IBurpExtenderCallbacks;
 import vpsproxy.*;
 
+import software.amazon.awssdk.auth.credentials.*;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.*;
+
 public class AWSProvider extends Provider {
     private IBurpExtenderCallbacks callbacks;
 
@@ -103,5 +108,31 @@ public class AWSProvider extends Provider {
         });
 
         return panel;
+    }
+
+    private Ec2Client getClient() {
+        String awsAccessKey = callbacks.loadExtensionSetting(awsAccessKeySetting);
+        String awsSecretKey = callbacks.loadExtensionSetting(awsSecretKeySetting);
+
+        if (awsAccessKey == null || awsSecretKey == null) {
+            Logger.log(String.format("%s: missing API key(s)", getName()));
+            return null;
+        }
+
+        AwsCredentials credentials = AwsBasicCredentials.create(awsAccessKey, awsSecretKey);
+
+        Ec2Client ec2Client = Ec2Client.builder()
+                .region(Region.US_EAST_1)
+                .credentialsProvider(() -> credentials)
+                .build();
+
+        try {
+            ec2Client.describeAccountAttributes();
+        } catch (Ec2Exception e) {
+            Logger.log(String.format("%s: %s", getName(), e));
+            return null;
+        }
+
+        return ec2Client;
     }
 }

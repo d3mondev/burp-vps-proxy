@@ -8,6 +8,8 @@ repositories {
 dependencies {
     implementation 'net.portswigger.burp.extender:burp-extender-api:2.1'
     implementation 'com.myjeeva.digitalocean:digitalocean-api-client:2.17'
+    implementation 'software.amazon.awssdk:ec2:2.17.54'
+    implementation 'software.amazon.awssdk:core:2.17.54'
 }
 
 sourceSets {
