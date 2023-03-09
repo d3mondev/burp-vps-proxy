@@ -17,17 +17,15 @@ public abstract class Provider {
     public abstract JComponent getUI();
 
     protected String getProvisioningScript(String password) throws IOException {
-        if (SCRIPT != null) {
-            return SCRIPT;
-        }
-
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(SCRIPT_RESOURCE_PATH);
-        if (inputStream != null) {
-            try (Scanner scanner = new Scanner(inputStream, "UTF-8")) {
-                SCRIPT = scanner.useDelimiter("\\A").next();
+        if (SCRIPT == null) {
+            InputStream inputStream = getClass().getClassLoader().getResourceAsStream(SCRIPT_RESOURCE_PATH);
+            if (inputStream != null) {
+                try (Scanner scanner = new Scanner(inputStream, "UTF-8")) {
+                    SCRIPT = scanner.useDelimiter("\\A").next();
+                }
+            } else {
+                throw new IOException(String.format("Resource '%s' not found", SCRIPT_RESOURCE_PATH));
             }
-        } else {
-            throw new IOException(String.format("Resource '%s' not found", SCRIPT_RESOURCE_PATH));
         }
 
         return SCRIPT.replaceAll("CHANGEME", password);
