@@ -7,7 +7,7 @@ import javax.swing.event.*;
 import burp.IBurpExtenderCallbacks;
 import vpsproxy.*;
 
-public class AWSProvider implements Provider {
+public class AWSProvider extends Provider {
     private IBurpExtenderCallbacks callbacks;
 
     final private String awsAccessKeySetting = "ProviderAWSAccessKey";

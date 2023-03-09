@@ -1,11 +1,9 @@
 package vpsproxy.providers;
 
 import java.awt.*;
-import java.io.InputStream;
-import java.security.SecureRandom;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import javax.swing.*;
 import javax.swing.event.*;
 import com.myjeeva.digitalocean.DigitalOcean;
@@ -15,23 +13,13 @@ import com.myjeeva.digitalocean.pojo.Droplet;
 import burp.IBurpExtenderCallbacks;
 import vpsproxy.*;
 
-public class DigitalOceanProvider implements Provider {
+public class DigitalOceanProvider extends Provider {
     private IBurpExtenderCallbacks callbacks;
 
     final private String apiKeySetting = "ProviderDigitalOceanAPIKey";
-    private String provisioningScript = "";
 
     public DigitalOceanProvider(IBurpExtenderCallbacks callbacks) {
         this.callbacks = callbacks;
-
-        InputStream inputStream = DigitalOceanProvider.class.getClassLoader().getResourceAsStream("provisioning.sh");
-        if (inputStream != null) {
-            try (Scanner scanner = new Scanner(inputStream, "UTF-8")) {
-                provisioningScript = scanner.useDelimiter("\\A").next();
-            }
-        } else {
-            Logger.log("Resource 'provisioning.sh' not found");
-        }
     }
 
     @Override
@@ -40,7 +28,7 @@ public class DigitalOceanProvider implements Provider {
     }
 
     @Override
-    public ProxySettings startInstance() {
+    public ProxySettings startInstance() throws IOException {
         Logger.log("DigitalOcean: creating a new droplet");
 
         DigitalOcean client = getClient();
@@ -60,7 +48,7 @@ public class DigitalOceanProvider implements Provider {
         droplet.setTags(tags);
 
         String password = getRandomString(12);
-        droplet.setUserData(provisioningScript.replace("CHANGEME", password));
+        droplet.setUserData(getProvisioningScript(password));
 
         try {
             droplet = client.createDroplet(droplet);
@@ -168,22 +156,5 @@ public class DigitalOceanProvider implements Provider {
         }
 
         return client;
-    }
-
-    private String getRandomString(int n) {
-        String customAlphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
-
-        SecureRandom secureRandom = new SecureRandom();
-        byte[] randomBytes = new byte[8];
-        secureRandom.nextBytes(randomBytes);
-
-        StringBuilder sb = new StringBuilder(6);
-        for (int i = 0; i < n; i++) {
-            int randomIndex = secureRandom.nextInt(customAlphabet.length());
-            char randomChar = customAlphabet.charAt(randomIndex);
-            sb.append(randomChar);
-        }
-
-        return sb.toString();
     }
 }

@@ -193,13 +193,12 @@ public class OptionsTab implements ITab {
                     return;
                 }
 
-                stopButton.setEnabled(true);
-                stopButton.requestFocusInWindow();
-                providerComboBox.setEnabled(false);
-                deployButton.setEnabled(false);
+                setRunningState();
 
                 new Thread(() -> {
-                    extension.startInstance(selectedProvider);
+                    if (!extension.startInstance(selectedProvider)) {
+                        setStoppedState();
+                    }
                 }).start();
             }
         });
@@ -212,12 +211,9 @@ public class OptionsTab implements ITab {
                     return;
                 }
 
-                extension.destroyInstance(selectedProvider);
+                setStoppedState();
 
-                deployButton.setEnabled(true);
-                deployButton.requestFocusInWindow();
-                providerComboBox.setEnabled(true);
-                stopButton.setEnabled(false);
+                extension.destroyInstance(selectedProvider);
             }
         });
     }
@@ -235,5 +231,19 @@ public class OptionsTab implements ITab {
         }
 
         return provider;
+    }
+
+    private void setRunningState() {
+        stopButton.setEnabled(true);
+        stopButton.requestFocusInWindow();
+        providerComboBox.setEnabled(false);
+        deployButton.setEnabled(false);
+    }
+
+    private void setStoppedState() {
+        deployButton.setEnabled(true);
+        deployButton.requestFocusInWindow();
+        providerComboBox.setEnabled(true);
+        stopButton.setEnabled(false);
     }
 }

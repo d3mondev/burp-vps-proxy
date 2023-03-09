@@ -42,12 +42,19 @@ public class VPSProxy {
         return callbacks;
     }
 
-    protected void startInstance(Provider provider) {
-        ProxySettings proxy = provider.startInstance();
-        if (proxy == null)
-            return;
+    protected boolean startInstance(Provider provider) {
+        try {
+            ProxySettings proxy = provider.startInstance();
+            if (proxy == null)
+                return false;
 
-        configureProxy(proxy);
+            configureProxy(proxy);
+        } catch (Exception e) {
+            Logger.log(e.getMessage());
+            return false;
+        }
+
+        return true;
     }
 
     protected void destroyInstance(Provider provider) {
