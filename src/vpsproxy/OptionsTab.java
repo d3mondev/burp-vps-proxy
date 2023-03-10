@@ -4,6 +4,7 @@ import javax.swing.*;
 import burp.ITab;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.event.ActionListener;
 import java.util.Map;
 import vpsproxy.providers.Provider;
 

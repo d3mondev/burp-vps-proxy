@@ -1,6 +1,7 @@
 package vpsproxy.providers;
 
 import java.awt.*;
+import java.awt.event.*;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.Collections;
@@ -8,7 +9,6 @@ import java.util.Comparator;
 import java.util.Optional;
 import javax.swing.*;
 import javax.swing.event.*;
-
 import burp.IBurpExtenderCallbacks;
 import vpsproxy.*;
 
@@ -25,8 +25,39 @@ public class AWSProvider extends Provider {
 
     final private String awsAccessKeySetting = "ProviderAWSAccessKey";
     final private String awsSecretKeySetting = "ProviderAWSSecretKey";
-    final private String awsRegion = "us-east-1";
+    final private String awsRegionSetting = "ProviderAWSRegion";
+    final private String[] awsRegions = {
+        "us-east-2",
+        "us-east-1",
+        "us-west-1",
+        "us-west-2",
+        "af-south-1",
+        "ap-east-1",
+        "ap-south-2",
+        "ap-southeast-3",
+        "ap-southeast-4",
+        "ap-south-1",
+        "ap-northeast-3",
+        "ap-northeast-2",
+        "ap-southeast-1",
+        "ap-southeast-2",
+        "ap-northeast-1",
+        "ca-central-1",
+        "eu-central-1",
+        "eu-west-1",
+        "eu-west-2",
+        "eu-south-1",
+        "eu-west-3",
+        "eu-south-2",
+        "eu-north-1",
+        "eu-central-2",
+        "me-south-1",
+        "me-central-1",
+        "sa-east-1",
+    };
+
     final private InstanceType awsInstanceType = InstanceType.T2_MICRO;
+    private String awsRegion = "us-east-1";
 
     private Ec2Client ec2Client;
 
@@ -197,6 +228,18 @@ public class AWSProvider extends Provider {
         awsSecretKeyPasswordField.setPreferredSize(new Dimension(200, awsSecretKeyPasswordField.getPreferredSize().height));
         awsSecretKeyPasswordField.setText(callbacks.loadExtensionSetting(awsSecretKeySetting));
 
+        JLabel awsRegionLabel = new JLabel("Region:");
+        awsRegionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JComboBox<String> awsRegionComboBox = new JComboBox<>();
+        awsRegionComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        awsRegionComboBox.setMaximumSize(new Dimension(125, awsRegionComboBox.getPreferredSize().height));
+        for (int i = 0; i < awsRegions.length; i++) {
+            awsRegionComboBox.addItem(awsRegions[i]);
+        }
+        String selectedRegion = callbacks.loadExtensionSetting(awsRegionSetting);
+        awsRegionComboBox.setSelectedItem(selectedRegion);
+
         panel.add(awsAccessKeyLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(awsAccessKeyTextField);
@@ -204,6 +247,10 @@ public class AWSProvider extends Provider {
         panel.add(awsSecretKeyLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(awsSecretKeyPasswordField);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        panel.add(awsRegionLabel);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        panel.add(awsRegionComboBox);
 
         awsAccessKeyTextField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -242,6 +289,19 @@ public class AWSProvider extends Provider {
             private void saveSetting() {
                 String value = new String(awsSecretKeyPasswordField.getPassword());
                 callbacks.saveExtensionSetting(awsSecretKeySetting, value);
+            }
+        });
+
+        awsRegionComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Object selectedItem = awsRegionComboBox.getSelectedItem();
+                if (selectedItem == null) {
+                    return;
+                }
+
+                awsRegion = selectedItem.toString();
+                callbacks.saveExtensionSetting(awsRegionSetting, awsRegion);
             }
         });
 
