@@ -204,7 +204,9 @@ public class OptionsTab implements ITab {
                 setRunningState();
 
                 workerThread = new Thread(() -> {
-                    if (!extension.startInstance(selectedProvider)) {
+                    try {
+                        extension.startInstance(selectedProvider);
+                    } catch (Exception ex) {
                         setStoppedState();
                     }
                 });
@@ -228,7 +230,10 @@ public class OptionsTab implements ITab {
 
                 setStoppedState();
 
-                extension.destroyInstance(selectedProvider);
+                try {
+                    extension.destroyInstance(selectedProvider);
+                } catch (Exception ex) {
+                }
             }
         });
     }

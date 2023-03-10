@@ -1,7 +1,6 @@
 package vpsproxy.providers;
 
 import java.awt.*;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
@@ -28,29 +27,27 @@ public class DigitalOceanProvider extends Provider {
     }
 
     @Override
-    public ProxySettings startInstance() throws IOException {
+    public ProxySettings startInstance() throws ProviderException {
         log("creating a new droplet");
 
-        DigitalOcean client = getClient();
-        if (client == null) {
-            return null;
-        }
-
-        String dropletName = String.format("burp-vps-proxy-%s", getRandomString(4));
-        List<String> tags = new ArrayList<>();
-        tags.add("burp-vps-proxy");
-
-        Droplet droplet = new Droplet();
-        droplet.setName(dropletName);
-        droplet.setRegion(new com.myjeeva.digitalocean.pojo.Region("nyc"));
-        droplet.setImage(new com.myjeeva.digitalocean.pojo.Image("debian-11-x64"));
-        droplet.setSize("s-1vcpu-512mb-10gb");
-        droplet.setTags(tags);
-
-        String password = getRandomString(12);
-        droplet.setUserData(getProvisioningScript(password));
-
+        DigitalOcean client;
         try {
+            client = getClient();
+
+            String dropletName = String.format("burp-vps-proxy-%s", getRandomString(4));
+            List<String> tags = new ArrayList<>();
+            tags.add("burp-vps-proxy");
+
+            Droplet droplet = new Droplet();
+            droplet.setName(dropletName);
+            droplet.setRegion(new com.myjeeva.digitalocean.pojo.Region("nyc"));
+            droplet.setImage(new com.myjeeva.digitalocean.pojo.Image("debian-11-x64"));
+            droplet.setSize("s-1vcpu-512mb-10gb");
+            droplet.setTags(tags);
+
+            String password = getRandomString(12);
+            droplet.setUserData(getProvisioningScript(password));
+
             droplet = client.createDroplet(droplet);
 
             int attempts = 0;
@@ -67,24 +64,21 @@ public class DigitalOceanProvider extends Provider {
 
                 droplet = client.getDropletInfo(droplet.getId());
             }
+
+            logf("droplet %s created", droplet.getName());
+            return new ProxySettings(droplet.getNetworks().getVersion4Networks().get(0).getIpAddress(), "1080", "burp-vps-proxy", password);
+        } catch (ProviderException e) {
+            throw e;
         } catch (Exception e) {
-            log(e.getMessage());
-            return null;
+            throw new ProviderException(String.format("error creating droplet: %s", e.getMessage()), e);
         }
-
-        logf("droplet %s created", droplet.getName());
-
-        return new ProxySettings(droplet.getNetworks().getVersion4Networks().get(0).getIpAddress(), "1080", "burp-vps-proxy", password);
     }
 
     @Override
-    public void destroyInstance() {
-        DigitalOcean client = getClient();
-        if (client == null) {
-            return;
-        }
-
+    public void destroyInstance() throws ProviderException {
         try {
+            DigitalOcean client = getClient();
+
             List<Droplet> droplets = client.getAvailableDroplets(0, Integer.MAX_VALUE).getDroplets();
             for (Droplet droplet : droplets) {
                 List<String> tags = droplet.getTags();
@@ -93,9 +87,10 @@ public class DigitalOceanProvider extends Provider {
                     logf("droplet %s deleted", droplet.getName());
                 }
             }
+        } catch (ProviderException e) {
+            throw e;
         } catch (Exception e) {
-            log(e.getMessage());
-            return;
+            throw new ProviderException(String.format("error deleting droplet: %s", e.getMessage()), e);
         }
     }
 
@@ -138,19 +133,17 @@ public class DigitalOceanProvider extends Provider {
         return panel;
     }
 
-    private DigitalOcean getClient() {
+    private DigitalOcean getClient() throws ProviderException {
         String apiKey = callbacks.loadExtensionSetting(apiKeySetting);
         if (apiKey == null) {
-            log("no API key defined");
-            return null;
+            throw new ProviderException("no api key defined", null);
         }
 
         DigitalOcean client = new DigitalOceanClient(apiKey);
         try {
             client.getAccountInfo();
         } catch (Exception e) {
-            log(e.getMessage());
-            return null;
+            throw new ProviderException(String.format("error getting account info: %s", e.getMessage()), e);
         }
 
         return client;

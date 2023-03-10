@@ -26,6 +26,7 @@ public class AWSProvider extends Provider {
     final private String awsAccessKeySetting = "ProviderAWSAccessKey";
     final private String awsSecretKeySetting = "ProviderAWSSecretKey";
     final private String awsRegion = "us-east-1";
+    final private InstanceType awsInstanceType = InstanceType.T2_MICRO;
 
     private Ec2Client ec2Client;
 
@@ -39,113 +40,140 @@ public class AWSProvider extends Provider {
     }
 
     @Override
-    public ProxySettings startInstance() {
+    public ProxySettings startInstance() throws ProviderException {
         log("creating a new instance");
 
-        Ec2Client ec2Client = createClient();
-        if (ec2Client == null) {
-            return null;
+        Ec2Client ec2Client;
+        try {
+            ec2Client = createClient();
+        } catch (ProviderException e) {
+            throw e;
         }
 
-        String script;
         String password = getRandomString(12);
+        String script;
         try {
             script = getProvisioningScript(password);
         } catch (IOException e) {
-            log(e.getMessage());
-            return null;
+            throw new ProviderException(String.format("error loading provisioning script: %s", e.getMessage()), e);
         }
 
-        String amiId = getAmiId("debian-11", awsRegion);
-        if (amiId == null) {
-            log("couldn't find image for 'debian-11'");
-            return null;
+        String amiId;
+        try {
+            amiId = getAmiId("debian-11", awsRegion);
+        } catch (ProviderException e) {
+            throw e;
         }
 
-        String securityGroupId = createSecurityGroup("burp-vps-proxy", "Allow traffic to port 1080 for the Burp SOCKS Proxy");
+        String securityGroupId;
+        try {
+            securityGroupId = createSecurityGroup("burp-vps-proxy", "Allow traffic to port 1080 for the Burp SOCKS Proxy");
+        } catch (ProviderException e) {
+            throw e;
+        }
 
         String instanceName = String.format("burp-vps-proxy-%s", getRandomString(4));
         Tag nameTag = Tag.builder()
-                .key("Name")
-                .value(instanceName)
-                .build();
+            .key("Name")
+            .value(instanceName)
+            .build();
 
         Tag proxyTag = Tag.builder()
-                .key(instanceTag)
-                .value("")
-                .build();
+            .key(instanceTag)
+            .value("")
+            .build();
 
         TagSpecification tagSpecification = TagSpecification.builder()
-                .resourceType("instance")
-                .tags(nameTag, proxyTag)
-                .build();
+            .resourceType("instance")
+            .tags(nameTag, proxyTag)
+            .build();
 
         RunInstancesRequest runRequest = RunInstancesRequest.builder()
-                .instanceType(InstanceType.T2_MICRO)
-                .maxCount(1)
-                .minCount(1)
-                .imageId(amiId)
-                .userData(script)
-                .tagSpecifications(tagSpecification)
-                .securityGroupIds(securityGroupId)
-                .build();
+            .instanceType(awsInstanceType)
+            .maxCount(1)
+            .minCount(1)
+            .imageId(amiId)
+            .userData(script)
+            .tagSpecifications(tagSpecification)
+            .securityGroupIds(securityGroupId)
+            .build();
 
-        RunInstancesResponse runResponse = ec2Client.runInstances(runRequest);
-        String instanceId = runResponse.instances().get(0).instanceId();
-
-        ec2Client.waiter().waitUntilInstanceRunning(r -> r.instanceIds(instanceId));
+        RunInstancesResponse runResponse;
+        String instanceId;
+        try {
+            runResponse = ec2Client.runInstances(runRequest);
+            instanceId = runResponse.instances().get(0).instanceId();
+            ec2Client.waiter().waitUntilInstanceRunning(r -> r.instanceIds(instanceId));
+        } catch (Exception e) {
+            throw new ProviderException(String.format("error creating instance: %s", e.getMessage()), e);
+        }
 
         DescribeInstancesRequest describeRequest = DescribeInstancesRequest.builder()
-                .instanceIds(instanceId)
-                .build();
+            .instanceIds(instanceId)
+            .build();
 
-        DescribeInstancesResponse describeResponse = ec2Client.describeInstances(describeRequest);
+        DescribeInstancesResponse describeResponse;
+        try {
+            describeResponse = ec2Client.describeInstances(describeRequest);
+        } catch (Exception e) {
+            throw new ProviderException(String.format("error reading newly created instance: %s", e.getMessage()), e);
+        }
+
         String publicIpAddress = describeResponse.reservations().get(0).instances().get(0).publicIpAddress();
-
         return createProxySettings(publicIpAddress, password);
     }
 
     @Override
-    public void destroyInstance() {
-        Ec2Client ec2Client = createClient();
-        if (ec2Client == null) {
-            return;
+    public void destroyInstance() throws ProviderException {
+        Ec2Client ec2Client;
+        try {
+            ec2Client = createClient();
+        } catch (ProviderException e) {
+            throw e;
         }
 
         DescribeInstancesRequest describeRequest = DescribeInstancesRequest.builder()
-                .filters(
-                    Filter.builder()
-                        .name("tag-key")
-                        .values(instanceTag)
-                        .build(),
-                    Filter.builder()
-                        .name("instance-state-name")
-                        .values("pending", "running", "rebooting", "stopping", "stopped")
-                        .build())
-                .build();
+            .filters(
+                Filter.builder()
+                    .name("tag-key")
+                    .values(instanceTag)
+                    .build(),
+                Filter.builder()
+                    .name("instance-state-name")
+                    .values("pending", "running", "rebooting", "stopping", "stopped")
+                    .build())
+            .build();
 
-        DescribeInstancesResponse describeResponse = ec2Client.describeInstances(describeRequest);
+        DescribeInstancesResponse describeResponse;
+        try {
+            describeResponse = ec2Client.describeInstances(describeRequest);
+        } catch (Exception e) {
+            throw new ProviderException(String.format("error listing instances: %s", e.getMessage()), e);
+        }
 
         describeResponse.reservations().stream()
-                .flatMap(reservation -> reservation.instances().stream())
-                .forEach(instance -> {
-                    String instanceId = instance.instanceId();
-                    String instanceName = "";
-                    for (Tag tag : instance.tags()) {
-                        if (tag.key().equals("Name")) {
-                            instanceName = tag.value();
-                            break;
-                        }
+            .flatMap(reservation -> reservation.instances().stream())
+            .forEach(instance -> {
+                String instanceId = instance.instanceId();
+                String instanceName = "";
+                for (Tag tag : instance.tags()) {
+                    if (tag.key().equals("Name")) {
+                        instanceName = tag.value();
+                        break;
                     }
+                }
 
-                    TerminateInstancesRequest terminateRequest = TerminateInstancesRequest.builder()
-                            .instanceIds(instanceId)
-                            .build();
+                TerminateInstancesRequest terminateRequest = TerminateInstancesRequest.builder()
+                    .instanceIds(instanceId)
+                    .build();
 
+                try {
                     ec2Client.terminateInstances(terminateRequest);
-
                     logf("instance %s deleted", instanceName);
-                });
+                } catch (Exception e) {
+                    logf("error deleting instance '%s': %s", instanceName, e.getMessage());
+                }
+            });
     }
 
     @Override
@@ -226,68 +254,77 @@ public class AWSProvider extends Provider {
         return Base64.getEncoder().encodeToString(script.getBytes());
     }
 
-    private Ec2Client createClient() {
+    private Ec2Client createClient() throws ProviderException {
         // Load the AWS keys from settings
         String awsAccessKey = callbacks.loadExtensionSetting(awsAccessKeySetting);
         String awsSecretKey = callbacks.loadExtensionSetting(awsSecretKeySetting);
 
-        if (awsAccessKey == null || awsSecretKey == null) {
-            log("missing API key(s)");
-            return null;
+        if (awsAccessKey == null || awsSecretKey == null || awsAccessKey.isEmpty() || awsSecretKey.isEmpty()) {
+            throw new ProviderException("missing API key(s)", null);
         }
 
-        // Configure the region
-        Region region;
         try {
-            region = Region.of(awsRegion);
-        } catch (Exception e) {
-            logf("%s: '%s' is not a valid region", getName(), awsRegion);
-            return null;
-        }
+            // Configure the region
+            Region region = Region.of(awsRegion);
 
-        // Create the client
-        AwsCredentials credentials = AwsBasicCredentials.create(awsAccessKey, awsSecretKey);
-        ec2Client = Ec2Client.builder()
+            // Create the client
+            AwsCredentials credentials = AwsBasicCredentials.create(awsAccessKey, awsSecretKey);
+            ec2Client = Ec2Client.builder()
                 .region(region)
                 .credentialsProvider(() -> credentials)
                 .build();
+        } catch (Exception e) {
+            throw new ProviderException(String.format("error creating AWS client: %s", e.getMessage()), e);
+        }
 
         return ec2Client;
     }
 
-    private String getAmiId(String osType, String region) {
+    private String getAmiId(String osType, String region) throws ProviderException {
         // Filter by name
         Filter osFilter = Filter.builder()
-                .name("name")
-                .values(osType + "-*")
-                .build();
+            .name("name")
+            .values(osType + "-*")
+            .build();
 
         // Filter by architecture
         Filter architectureFilter = Filter.builder()
-                .name("architecture")
-                .values("x86_64")
-                .build();
+            .name("architecture")
+            .values("x86_64")
+            .build();
 
         // Find the requested image
         DescribeImagesRequest describeImagesRequest = DescribeImagesRequest.builder()
-                .owners("136693071363") // Debian AMI owner ID
-                .filters(osFilter, architectureFilter)
-                .build();
+            .owners("136693071363") // Debian AMI owner ID
+            .filters(osFilter, architectureFilter)
+            .build();
 
-        DescribeImagesResponse describeImagesResponse = ec2Client.describeImages(describeImagesRequest);
+        DescribeImagesResponse describeImagesResponse;
+        try {
+            describeImagesResponse = ec2Client.describeImages(describeImagesRequest);
+        } catch (Exception e) {
+            throw new ProviderException(String.format("failed to find image '%s': %s", osType, e.getMessage()), e);
+        }
+
         Optional<Image> latestImage = describeImagesResponse.images().stream()
-                .max(Comparator.comparing(Image::creationDate));
+            .max(Comparator.comparing(Image::creationDate));
 
         // Return the most recent image found
         return latestImage.map(Image::imageId).orElse(null);
     }
 
-    private String createSecurityGroup(String groupName, String groupDescription) {
+    private String createSecurityGroup(String groupName, String groupDescription) throws ProviderException {
         // Check if the security group already exists
-        DescribeSecurityGroupsResponse describeResponse = ec2Client.describeSecurityGroups();
+        DescribeSecurityGroupsResponse describeResponse;
+        try {
+            describeResponse = ec2Client.describeSecurityGroups();
+        } catch (Exception e) {
+            throw new ProviderException(String.format("error listing security groups: %s", e.getMessage()), e);
+        }
+
         Optional<SecurityGroup> securityGroup = describeResponse.securityGroups().stream()
-                .filter(sg -> sg.groupName().equals(groupName))
-                .findFirst();
+            .filter(sg -> sg.groupName().equals(groupName))
+            .findFirst();
 
         if (securityGroup.isPresent()) {
             // Security group already exists, return its ID
@@ -296,29 +333,47 @@ public class AWSProvider extends Provider {
 
         // Create the security group
         CreateSecurityGroupRequest createRequest = CreateSecurityGroupRequest.builder()
-                .groupName(groupName)
-                .description(groupDescription)
-                .build();
-        CreateSecurityGroupResponse createResponse = ec2Client.createSecurityGroup(createRequest);
+            .groupName(groupName)
+            .description(groupDescription)
+            .build();
+
+        CreateSecurityGroupResponse createResponse;
+        try {
+            createResponse = ec2Client.createSecurityGroup(createRequest);
+        } catch (Exception e) {
+            throw new ProviderException(String.format("error creating security groups: %s", e.getMessage()), e);
+        }
+
         String groupId = createResponse.groupId();
 
         // Add a rule to the security group that allows traffic to port 1080
         IpRange ipRange = IpRange.builder()
-                .cidrIp("0.0.0.0/0")
-                .build();
+            .cidrIp("0.0.0.0/0")
+            .build();
         IpPermission ipPermission = IpPermission.builder()
-                .ipProtocol("tcp")
-                .fromPort(1080)
-                .toPort(1080)
-                .ipRanges(ipRange)
-                .build();
+            .ipProtocol("tcp")
+            .fromPort(1080)
+            .toPort(1080)
+            .ipRanges(ipRange)
+            .build();
         AuthorizeSecurityGroupIngressRequest authorizeRequest = AuthorizeSecurityGroupIngressRequest.builder()
-                .groupId(groupId)
-                .ipPermissions(Collections.singletonList(ipPermission))
-                .build();
-        ec2Client.authorizeSecurityGroupIngress(authorizeRequest);
+            .groupId(groupId)
+            .ipPermissions(Collections.singletonList(ipPermission))
+            .build();
+
+        try {
+            ec2Client.authorizeSecurityGroupIngress(authorizeRequest);
+        } catch (Exception e) {
+            throw new ProviderException(String.format("error authorizing security group ingress: %s", e.getMessage()), e);
+        }
 
         // Return the ID of the security group
         return groupId;
+    }
+
+    public class CreateSecurityGroupException extends Exception {
+        public CreateSecurityGroupException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

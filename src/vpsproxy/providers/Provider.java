@@ -16,8 +16,8 @@ public abstract class Provider {
     private static String SCRIPT;
 
     public abstract String getName();
-    public abstract ProxySettings startInstance() throws IOException;
-    public abstract void destroyInstance();
+    public abstract ProxySettings startInstance() throws ProviderException;
+    public abstract void destroyInstance() throws ProviderException;
     public abstract JComponent getUI();
 
     protected void log(String message) {
@@ -63,5 +63,11 @@ public abstract class Provider {
 
     protected ProxySettings createProxySettings(String publicIpAddress, String password) {
         return new ProxySettings(publicIpAddress, proxyPort, proxyUsername, password);
+    }
+
+    public class ProviderException extends Exception {
+        public ProviderException(String message, Throwable cause) {
+            super(getName() + ": " + message, cause);
+        }
     }
 }

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import burp.IBurpExtenderCallbacks;
 import vpsproxy.providers.DigitalOceanProvider;
+import vpsproxy.providers.Provider.ProviderException;
 import vpsproxy.providers.*;
 
 public class VPSProxy {
@@ -35,7 +36,12 @@ public class VPSProxy {
     public void close() {
         Provider currentProvider = optionsTab.getSelectedProvider();
         if (currentProvider != null) {
-            destroyInstance(currentProvider);
+            try {
+                destroyInstance(currentProvider);
+            } catch (ProviderException e) {
+            } catch (Exception e) {
+                Logger.log(String.format("Unhandled exception: %s", e.getMessage()));
+            }
         }
     }
 
@@ -43,27 +49,29 @@ public class VPSProxy {
         return callbacks;
     }
 
-    protected boolean startInstance(Provider provider) {
+    protected void startInstance(Provider provider) throws ProviderException {
         try {
             ProxySettings proxy = provider.startInstance();
-            if (proxy == null)
-                return false;
-
             configureProxy(proxy);
-        } catch (Exception e) {
+        } catch (ProviderException e) {
             Logger.log(e.getMessage());
-            return false;
+            throw e;
+        } catch (Exception e) {
+            Logger.log(String.format("Unhandled exception: %s", e.getMessage()));
+            throw e;
         }
-
-        return true;
     }
 
-    protected void destroyInstance(Provider provider) {
+    protected void destroyInstance(Provider provider) throws ProviderException {
         try {
             provider.destroyInstance();
             clearProxy();
-        } catch (Exception e) {
+        } catch (ProviderException e) {
             Logger.log(e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            Logger.log(String.format("Unhandled exception: %s", e.getMessage()));
+            throw e;
         }
     }
 
