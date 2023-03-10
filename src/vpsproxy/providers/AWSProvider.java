@@ -22,6 +22,9 @@ public class AWSProvider extends Provider {
     private IBurpExtenderCallbacks callbacks;
 
     final private String instanceTag = "burp-vps-proxy";
+    final private String awsOsType = "debian-11";
+    final private String awsInstanceArch = "arm64";
+    final private InstanceType awsInstanceType = InstanceType.T4_G_NANO;
 
     final private String awsAccessKeySetting = "ProviderAWSAccessKey";
     final private String awsSecretKeySetting = "ProviderAWSSecretKey";
@@ -56,9 +59,7 @@ public class AWSProvider extends Provider {
         "sa-east-1",
     };
 
-    final private InstanceType awsInstanceType = InstanceType.T2_MICRO;
     private String awsRegion = "us-east-1";
-
     private Ec2Client ec2Client;
 
     public AWSProvider(IBurpExtenderCallbacks callbacks) {
@@ -91,7 +92,7 @@ public class AWSProvider extends Provider {
 
         String amiId;
         try {
-            amiId = getAmiId("debian-11", awsRegion);
+            amiId = getAmiId(awsOsType, awsRegion);
         } catch (ProviderException e) {
             throw e;
         }
@@ -353,7 +354,7 @@ public class AWSProvider extends Provider {
         // Filter by architecture
         Filter architectureFilter = Filter.builder()
             .name("architecture")
-            .values("x86_64")
+            .values(awsInstanceArch)
             .build();
 
         // Find the requested image

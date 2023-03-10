@@ -17,6 +17,9 @@ socks pass {
 }
 EOF
 
+EXTERNAL_INTERFACE=$(ip route get 1 | awk '{print $5; exit}')
+sed -i "s/external: eth0/external: $EXTERNAL_INTERFACE/" /etc/danted.conf
+
 useradd -r -s /bin/false burp-vps-proxy
 echo 'burp-vps-proxy:CHANGEME' | chpasswd
 
