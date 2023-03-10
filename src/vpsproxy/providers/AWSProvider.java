@@ -237,8 +237,11 @@ public class AWSProvider extends Provider {
         for (int i = 0; i < awsRegions.length; i++) {
             awsRegionComboBox.addItem(awsRegions[i]);
         }
+
         String selectedRegion = callbacks.loadExtensionSetting(awsRegionSetting);
-        awsRegionComboBox.setSelectedItem(selectedRegion);
+        if (selectedRegion != null && !selectedRegion.isEmpty()) {
+            awsRegionComboBox.setSelectedItem(selectedRegion);
+        }
 
         panel.add(awsAccessKeyLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));

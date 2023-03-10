@@ -1,6 +1,7 @@
 package vpsproxy.providers;
 
 import java.awt.*;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
@@ -15,7 +16,22 @@ import vpsproxy.*;
 public class DigitalOceanProvider extends Provider {
     private IBurpExtenderCallbacks callbacks;
 
-    final private String apiKeySetting = "ProviderDigitalOceanAPIKey";
+    final private String doApiKeySettingKey = "Provider_DigitalOcean_APIKey";
+    final private String doRegionSettingKey = "Provider_DigitalOcean_Region";
+    final private String[] doRegions = {
+        "nyc1",
+        "nyc3",
+        "ams3",
+        "sfo3",
+        "sgp1",
+        "lon1",
+        "fra1",
+        "tor1",
+        "blr1",
+        "syd1",
+    };
+
+    private String doRegion = "nyc1";
 
     public DigitalOceanProvider(IBurpExtenderCallbacks callbacks) {
         this.callbacks = callbacks;
@@ -40,7 +56,7 @@ public class DigitalOceanProvider extends Provider {
 
             Droplet droplet = new Droplet();
             droplet.setName(dropletName);
-            droplet.setRegion(new com.myjeeva.digitalocean.pojo.Region("nyc"));
+            droplet.setRegion(new com.myjeeva.digitalocean.pojo.Region(doRegion));
             droplet.setImage(new com.myjeeva.digitalocean.pojo.Image("debian-11-x64"));
             droplet.setSize("s-1vcpu-512mb-10gb");
             droplet.setTags(tags);
@@ -105,10 +121,30 @@ public class DigitalOceanProvider extends Provider {
         JPasswordField apiKeyPasswordField = new JPasswordField();
         apiKeyPasswordField.setAlignmentX(Component.LEFT_ALIGNMENT);
         apiKeyPasswordField.setPreferredSize(new Dimension(200, apiKeyPasswordField.getPreferredSize().height));
-        apiKeyPasswordField.setText(callbacks.loadExtensionSetting(apiKeySetting));
+        apiKeyPasswordField.setText(callbacks.loadExtensionSetting(doApiKeySettingKey));
+
+        JLabel doRegionLabel = new JLabel("Region:");
+        doRegionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JComboBox<String> doRegionComboBox = new JComboBox<>();
+        doRegionComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        doRegionComboBox.setMaximumSize(new Dimension(75, doRegionComboBox.getPreferredSize().height));
+        for (int i = 0; i < doRegions.length; i++) {
+            doRegionComboBox.addItem(doRegions[i]);
+        }
+
+        String selectedRegion = callbacks.loadExtensionSetting(doRegionSettingKey);
+        if (selectedRegion != null && !selectedRegion.isEmpty()) {
+            doRegionComboBox.setSelectedItem(selectedRegion);
+        }
 
         panel.add(apiKeyLabel);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
         panel.add(apiKeyPasswordField);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        panel.add(doRegionLabel);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        panel.add(doRegionComboBox);
 
         apiKeyPasswordField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -126,7 +162,20 @@ public class DigitalOceanProvider extends Provider {
 
             private void saveSetting() {
                 String value = new String(apiKeyPasswordField.getPassword());
-                callbacks.saveExtensionSetting(apiKeySetting, value);
+                callbacks.saveExtensionSetting(doApiKeySettingKey, value);
+            }
+        });
+
+        doRegionComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Object selectedItem = doRegionComboBox.getSelectedItem();
+                if (selectedItem == null) {
+                    return;
+                }
+
+                doRegion = selectedItem.toString();
+                callbacks.saveExtensionSetting(doRegionSettingKey, doRegion);
             }
         });
 
@@ -134,7 +183,7 @@ public class DigitalOceanProvider extends Provider {
     }
 
     private DigitalOcean getClient() throws ProviderException {
-        String apiKey = callbacks.loadExtensionSetting(apiKeySetting);
+        String apiKey = callbacks.loadExtensionSetting(doApiKeySettingKey);
         if (apiKey == null) {
             throw new ProviderException("no api key defined", null);
         }
