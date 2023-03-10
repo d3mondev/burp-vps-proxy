@@ -8,7 +8,7 @@ import java.awt.event.ActionListener;
 import java.util.Map;
 import vpsproxy.providers.Provider;
 
-public class OptionsTab implements ITab {
+public class VPSProxyTab implements ITab {
     private Map<String, Provider> providerMap;
     VPSProxy extension;
 
@@ -27,7 +27,7 @@ public class OptionsTab implements ITab {
 
     Thread workerThread;
 
-    public OptionsTab(VPSProxy extension, Map<String, Provider> providers) {
+    public VPSProxyTab(VPSProxy extension, Map<String, Provider> providers) {
         providerMap = providers;
         this.extension = extension;
 

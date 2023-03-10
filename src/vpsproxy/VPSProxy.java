@@ -9,7 +9,7 @@ import vpsproxy.providers.*;
 
 public class VPSProxy {
     private IBurpExtenderCallbacks callbacks;
-    private OptionsTab optionsTab;
+    private VPSProxyTab optionsTab;
     private boolean clearProxy;
 
     private Map<String, Provider> providerMap;
@@ -24,12 +24,12 @@ public class VPSProxy {
         Provider digitalOceanProvider = new DigitalOceanProvider(callbacks);
         providerMap.put(digitalOceanProvider.getName(), digitalOceanProvider);
 
-        optionsTab = new OptionsTab(this, providerMap);
+        optionsTab = new VPSProxyTab(this, providerMap);
 
         Logger.init(callbacks.getStdout(), optionsTab);
     }
 
-    public OptionsTab getUI() {
+    public VPSProxyTab getUI() {
         return optionsTab;
     }
 

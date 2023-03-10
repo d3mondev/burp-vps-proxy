@@ -7,9 +7,9 @@ import java.time.format.DateTimeFormatter;
 
 public class Logger {
     private static PrintWriter printWriter;
-    private static OptionsTab optionsTab;
+    private static VPSProxyTab optionsTab;
 
-    public static void init(OutputStream stdout, OptionsTab tab) {
+    public static void init(OutputStream stdout, VPSProxyTab tab) {
         printWriter = new PrintWriter(stdout, true);
         optionsTab = tab;
     }
