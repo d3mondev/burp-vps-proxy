@@ -259,6 +259,15 @@ public class OptionsTab implements ITab {
         stopButton.requestFocusInWindow();
         providerComboBox.setEnabled(false);
         deployButton.setEnabled(false);
+
+        Component[] providerPanelComponents = providerPanel.getComponents();
+        if (providerPanelComponents.length != 0) {
+            JPanel panel = (JPanel)providerPanelComponents[0];
+            Component[] components = panel.getComponents();
+            for (Component component : components) {
+                component.setEnabled(false);
+            }
+        }
     }
 
     private void setStoppedState() {
@@ -266,5 +275,14 @@ public class OptionsTab implements ITab {
         deployButton.requestFocusInWindow();
         providerComboBox.setEnabled(true);
         stopButton.setEnabled(false);
+
+        Component[] providerPanelComponents = providerPanel.getComponents();
+        if (providerPanelComponents.length != 0) {
+            JPanel panel = (JPanel)providerPanelComponents[0];
+            Component[] components = panel.getComponents();
+            for (Component component : components) {
+                component.setEnabled(true);
+            }
+        }
     }
 }
