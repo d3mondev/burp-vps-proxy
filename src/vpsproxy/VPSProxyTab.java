@@ -14,11 +14,13 @@ public class VPSProxyTab implements ITab {
 
     private JPanel panel;
     private JPanel providerPanel;
-    private JTextArea logTextArea;
-    private JScrollPane logScrollPane;
+    private JCheckBox destroyProxyCheckBox;
+    private JLabel destroyProxyLabel;
     private JComboBox<String> providerComboBox;
     private JButton deployButton;
     private JButton stopButton;
+    private JTextArea logTextArea;
+    private JScrollPane logScrollPane;
 
     private Font defaultFont;
     private Font headerFont;
@@ -47,14 +49,27 @@ public class VPSProxyTab implements ITab {
         // Initialize main panel
         this.panel = new JPanel();
 
+        // Intro UI elements
+        JLabel introHelp1Label = new JLabel("Select the VPS provider you want to use and enter the proper API key(s). Then, you can click Deploy to launch a new proxy.");
+        JLabel introHelp2Label = new JLabel("Once created, the extension will automatically configure your SOCKS5 proxy in Burp -> Settings -> Network -> Connections.");
+        JLabel introHelp3Label = new JLabel("The proxy server will automatically be terminated when Burp exits or the extension is unloaded.");
+
+        // Options UI elements
+        JLabel optionsHeaderLabel = new JLabel("Options");
+        optionsHeaderLabel.setFont(headerFont);
+        optionsHeaderLabel.setForeground(headerColor);
+
+        destroyProxyCheckBox = new JCheckBox();
+        String destroyProxy = extension.getCallbacks().loadExtensionSetting("DestroyProxy");
+        if (destroyProxy == null || destroyProxy.equals("true")) {
+            destroyProxyCheckBox.setSelected(true);
+        }
+        destroyProxyLabel = new JLabel("Destroy proxy when Burp exits");
+
         // Provider UI elements
         JLabel providerHeaderLabel = new JLabel("Provider");
         providerHeaderLabel.setFont(headerFont);
         providerHeaderLabel.setForeground(headerColor);
-
-        JLabel providerHelp1Label = new JLabel("Select the VPS provider you want to use and enter the proper API key(s). Then, you can click Deploy to launch a new proxy.");
-        JLabel providerHelp2Label = new JLabel("Once created, the extension will automatically configure your SOCKS5 proxy in Burp -> Settings -> Network -> Connections.");
-        JLabel providerHelp3Label = new JLabel("The proxy server will automatically be terminated when Burp exits or the extension is unloaded.");
 
         providerComboBox = new JComboBox<>();
         providerComboBox.setMaximumSize(new Dimension(150, providerComboBox.getPreferredSize().height));
@@ -102,10 +117,14 @@ public class VPSProxyTab implements ITab {
         layout.setAutoCreateContainerGaps(true);
 
         layout.setHorizontalGroup(layout.createParallelGroup()
+            .addComponent(introHelp1Label)
+            .addComponent(introHelp2Label)
+            .addComponent(introHelp3Label)
+            .addComponent(optionsHeaderLabel)
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(destroyProxyCheckBox)
+                .addComponent(destroyProxyLabel))
             .addComponent(providerHeaderLabel)
-            .addComponent(providerHelp1Label)
-            .addComponent(providerHelp2Label)
-            .addComponent(providerHelp3Label)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(providerComboBox)
                 .addComponent(deployButton)
@@ -115,11 +134,16 @@ public class VPSProxyTab implements ITab {
             .addComponent(logScrollPane));
 
         layout.setVerticalGroup(layout.createSequentialGroup()
-            .addComponent(providerHeaderLabel)
-            .addComponent(providerHelp1Label)
-            .addComponent(providerHelp2Label)
-            .addComponent(providerHelp3Label)
+            .addComponent(introHelp1Label)
+            .addComponent(introHelp2Label)
+            .addComponent(introHelp3Label)
             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, gapSize)
+            .addComponent(optionsHeaderLabel)
+            .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                .addComponent(destroyProxyCheckBox)
+                .addComponent(destroyProxyLabel))
+            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, gapSize)
+            .addComponent(providerHeaderLabel)
             .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                 .addComponent(providerComboBox)
                 .addComponent(deployButton)
@@ -133,6 +157,11 @@ public class VPSProxyTab implements ITab {
         layout.linkSize(deployButton, stopButton);
 
         this.panel.setLayout(layout);
+
+        String lastState = extension.getCallbacks().loadExtensionSetting("LastState");
+        if (lastState != null && lastState.equals("running")) {
+            setRunningState();
+        }
 
         installHandlers();
     }
@@ -169,7 +198,24 @@ public class VPSProxyTab implements ITab {
     }
 
     private void installHandlers() {
-        // Event handlers
+        destroyProxyCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (destroyProxyCheckBox.isSelected()) {
+                    extension.getCallbacks().saveExtensionSetting("DestroyProxy", "true");
+                } else {
+                    extension.getCallbacks().saveExtensionSetting("DestroyProxy", "false");
+                }
+            }
+        });
+
+        destroyProxyLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                destroyProxyCheckBox.doClick();
+            }
+        });
+
         providerComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -254,7 +300,9 @@ public class VPSProxyTab implements ITab {
         return provider;
     }
 
-    private void setRunningState() {
+    public void setRunningState() {
+        extension.getCallbacks().saveExtensionSetting("LastState", "running");
+
         stopButton.setEnabled(true);
         stopButton.requestFocusInWindow();
         providerComboBox.setEnabled(false);
@@ -270,7 +318,9 @@ public class VPSProxyTab implements ITab {
         }
     }
 
-    private void setStoppedState() {
+    public void setStoppedState() {
+        extension.getCallbacks().saveExtensionSetting("LastState", "stopped");
+
         deployButton.setEnabled(true);
         deployButton.requestFocusInWindow();
         providerComboBox.setEnabled(true);

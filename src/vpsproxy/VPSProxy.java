@@ -34,13 +34,16 @@ public class VPSProxy {
     }
 
     public void close() {
-        Provider currentProvider = optionsTab.getSelectedProvider();
-        if (currentProvider != null) {
-            try {
-                destroyInstance(currentProvider);
-            } catch (ProviderException e) {
-            } catch (Exception e) {
-                Logger.log(String.format("Unhandled exception: %s", e.getMessage()));
+        String destroyProxy = callbacks.loadExtensionSetting("DestroyProxy");
+        if (destroyProxy == null || destroyProxy.equals("true")) {
+            Provider currentProvider = optionsTab.getSelectedProvider();
+            if (currentProvider != null) {
+                try {
+                    destroyInstance(currentProvider);
+                } catch (ProviderException e) {
+                } catch (Exception e) {
+                    Logger.log(String.format("Unhandled exception: %s", e.getMessage()));
+                }
             }
         }
     }
@@ -66,6 +69,7 @@ public class VPSProxy {
         try {
             provider.destroyInstance();
             clearProxy();
+            optionsTab.setStoppedState();
         } catch (ProviderException e) {
             Logger.log(e.getMessage());
             throw e;
