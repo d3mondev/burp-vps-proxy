@@ -8,24 +8,22 @@ import vpsproxy.providers.Provider.ProviderException;
 import vpsproxy.providers.*;
 
 public class VPSProxy {
+    private static final String PROXY_CONFIG_TEMPLATE = "{\"project_options\":{\"connections\":{\"socks_proxy\":{\"dns_over_socks\":false,\"host\":\"%s\",\"password\":\"%s\",\"port\":%s,\"use_proxy\":true,\"use_user_options\":false,\"username\":\"%s\"}}}}";
+
     private IBurpExtenderCallbacks callbacks;
     private VPSProxyTab optionsTab;
-    private boolean clearProxy;
 
     private Map<String, Provider> providerMap;
 
     public VPSProxy(IBurpExtenderCallbacks callbacks) {
         this.callbacks = callbacks;
-        providerMap = new HashMap<String, Provider>();
+        createBurpInstanceId();
 
-        Provider awsProvider = new AWSProvider(callbacks);
-        providerMap.put(awsProvider.getName(), awsProvider);
-
-        Provider digitalOceanProvider = new DigitalOceanProvider(callbacks);
-        providerMap.put(digitalOceanProvider.getName(), digitalOceanProvider);
+        providerMap = new HashMap<>();
+        addProvider(new AWSProvider(callbacks));
+        addProvider(new DigitalOceanProvider(callbacks));
 
         optionsTab = new VPSProxyTab(this, providerMap);
-
         Logger.init(callbacks.getStdout(), optionsTab);
     }
 
@@ -34,16 +32,19 @@ public class VPSProxy {
     }
 
     public void close() {
-        String destroyProxy = callbacks.loadExtensionSetting("DestroyProxy");
-        if (destroyProxy == null || destroyProxy.equals("true")) {
-            Provider currentProvider = optionsTab.getSelectedProvider();
-            if (currentProvider != null) {
-                try {
-                    destroyInstance(currentProvider);
-                } catch (ProviderException e) {
-                } catch (Exception e) {
-                    Logger.log(String.format("Unhandled exception: %s", e.getMessage()));
-                }
+        String destroyProxySetting = callbacks.loadExtensionSetting(SettingsKeys.DESTROY_PROXY_ON_EXIT);
+        boolean destroyProxy = destroyProxySetting == null || Boolean.parseBoolean(destroyProxySetting);
+
+        if (!destroyProxy)
+            return;
+
+        Provider currentProvider = optionsTab.getSelectedProvider();
+        if (currentProvider != null) {
+            try {
+                destroyInstance(currentProvider);
+            } catch (ProviderException e) {
+            } catch (Exception e) {
+                Logger.log(String.format("Unhandled exception: %s", e.getMessage()));
             }
         }
     }
@@ -68,7 +69,7 @@ public class VPSProxy {
     protected void destroyInstance(Provider provider) throws ProviderException {
         try {
             provider.destroyInstance();
-            clearProxy();
+            resetProxySettings();
             optionsTab.setStoppedState();
         } catch (ProviderException e) {
             Logger.log(e.getMessage());
@@ -81,29 +82,35 @@ public class VPSProxy {
 
     protected void configureProxy(ProxySettings proxy) {
         Logger.log(String.format("Configuring proxy %s:%s:%s:%s", proxy.getIp(), proxy.getPort(), proxy.getUsername(), proxy.getPassword()));
-        Logger.log("Proxy configured. The VPS could still be provisioning, please give it a few minutes.");
 
-        String config = "{\"project_options\":{\"connections\":{\"socks_proxy\":{\"dns_over_socks\":false,\"host\":\"IPADDRESS\",\"password\":\"PASSWORD\",\"port\":PORT,\"use_proxy\":true,\"use_user_options\":false,\"username\":\"USERNAME\"}}}}";
-        config = config.replace("IPADDRESS", proxy.getIp())
-                    .replace("PORT", proxy.getPort())
-                    .replace("USERNAME", proxy.getUsername())
-                    .replace("PASSWORD", proxy.getPassword());
+        String configBackup = callbacks.saveConfigAsJson("project_options.connections.socks_proxy");
+        callbacks.saveExtensionSetting(SettingsKeys.PROXY_SETTINGS_BACKUP, configBackup);
 
+        String config = String.format(PROXY_CONFIG_TEMPLATE, proxy.getIp(), proxy.getPassword(), proxy.getPort(), proxy.getUsername());
         callbacks.loadConfigFromJson(config);
 
-        clearProxy = true;
+        Logger.log("Proxy configured. The VPS could still be provisioning, please give it a few minutes.");
     }
 
-    protected void clearProxy() {
-        if (!clearProxy) {
-            return;
+    protected void resetProxySettings() {
+        String config = callbacks.loadExtensionSetting(SettingsKeys.PROXY_SETTINGS_BACKUP);
+        if (config != null) {
+            Logger.log("Restoring proxy settings");
+            callbacks.loadConfigFromJson(config);
+            callbacks.saveExtensionSetting(SettingsKeys.PROXY_SETTINGS_BACKUP, null);
         }
+    }
 
-        Logger.log("Clearing proxy settings");
+    private void createBurpInstanceId() {
+        String instanceId = callbacks.loadExtensionSetting(SettingsKeys.BURP_INSTANCE_ID);
 
-        String config = "{\"project_options\":{\"connections\":{\"socks_proxy\":{\"dns_over_socks\":false,\"host\":\"0.0.0.0\",\"password\":\"\",\"port\":1080,\"use_proxy\":false,\"use_user_options\":false,\"username\":\"\"}}}}";
-        callbacks.loadConfigFromJson(config);
+        if (instanceId == null) {
+            String id = RandomString.generate(6);
+            callbacks.saveExtensionSetting(SettingsKeys.BURP_INSTANCE_ID, id);
+        }
+    }
 
-        clearProxy = false;
+    private void addProvider(Provider provider) {
+        providerMap.put(provider.getName(), provider);
     }
 }

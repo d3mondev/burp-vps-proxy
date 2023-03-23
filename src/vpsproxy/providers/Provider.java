@@ -2,7 +2,6 @@ package vpsproxy.providers;
 
 import java.io.InputStream;
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.Scanner;
 import javax.swing.JComponent;
 import vpsproxy.Logger;
@@ -42,23 +41,6 @@ public abstract class Provider {
         }
 
         return SCRIPT.replaceAll("CHANGEME", password);
-    }
-
-    protected String getRandomString(int n) {
-        String customAlphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
-
-        SecureRandom secureRandom = new SecureRandom();
-        byte[] randomBytes = new byte[8];
-        secureRandom.nextBytes(randomBytes);
-
-        StringBuilder sb = new StringBuilder(6);
-        for (int i = 0; i < n; i++) {
-            int randomIndex = secureRandom.nextInt(customAlphabet.length());
-            char randomChar = customAlphabet.charAt(randomIndex);
-            sb.append(randomChar);
-        }
-
-        return sb.toString();
     }
 
     protected ProxySettings createProxySettings(String publicIpAddress, String password) {

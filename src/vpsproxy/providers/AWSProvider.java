@@ -19,17 +19,15 @@ import software.amazon.awssdk.services.ec2.model.*;
 import software.amazon.awssdk.services.ec2.model.Image;
 
 public class AWSProvider extends Provider {
-    private IBurpExtenderCallbacks callbacks;
+    final private String INSTANCE_TAG = "burp-vps-proxy";
+    final private String AWS_OS_TYPE = "debian-11";
+    final private String AWS_INSTANCE_ARCH = "arm64";
+    final private InstanceType AWS_INSTANCE_TYPE = InstanceType.T4_G_NANO;
 
-    final private String instanceTag = "burp-vps-proxy";
-    final private String awsOsType = "debian-11";
-    final private String awsInstanceArch = "arm64";
-    final private InstanceType awsInstanceType = InstanceType.T4_G_NANO;
-
-    final private String awsAccessKeySetting = "ProviderAWSAccessKey";
-    final private String awsSecretKeySetting = "ProviderAWSSecretKey";
-    final private String awsRegionSetting = "ProviderAWSRegion";
-    final private String[] awsRegions = {
+    final private String AWS_ACCESS_KEY_SETTING = "ProviderAWSAccessKey";
+    final private String AWS_SECRET_KEY_SETTING = "ProviderAWSSecretKey";
+    final private String AWS_REGION_SETTING = "ProviderAWSRegion";
+    final private String[] AWS_REGIONS = {
         "us-east-2",
         "us-east-1",
         "us-west-1",
@@ -59,6 +57,8 @@ public class AWSProvider extends Provider {
         "sa-east-1",
     };
 
+    private IBurpExtenderCallbacks callbacks;
+
     private String awsRegion = "us-east-1";
     private Ec2Client ec2Client;
 
@@ -82,7 +82,7 @@ public class AWSProvider extends Provider {
             throw e;
         }
 
-        String password = getRandomString(12);
+        String password = RandomString.generate(12);
         String script;
         try {
             script = getProvisioningScript(password);
@@ -92,7 +92,7 @@ public class AWSProvider extends Provider {
 
         String amiId;
         try {
-            amiId = getAmiId(awsOsType, awsRegion);
+            amiId = getAmiId(AWS_OS_TYPE, awsRegion);
         } catch (ProviderException e) {
             throw e;
         }
@@ -104,15 +104,16 @@ public class AWSProvider extends Provider {
             throw e;
         }
 
-        String instanceName = String.format("burp-vps-proxy-%s", getRandomString(4));
+        String instanceName = String.format("burp-vps-proxy-%s", RandomString.generate(4));
         Tag nameTag = Tag.builder()
             .key("Name")
             .value(instanceName)
             .build();
 
+        String tagValue = callbacks.loadExtensionSetting(SettingsKeys.BURP_INSTANCE_ID);
         Tag proxyTag = Tag.builder()
-            .key(instanceTag)
-            .value("")
+            .key(INSTANCE_TAG)
+            .value(tagValue)
             .build();
 
         TagSpecification tagSpecification = TagSpecification.builder()
@@ -121,7 +122,7 @@ public class AWSProvider extends Provider {
             .build();
 
         RunInstancesRequest runRequest = RunInstancesRequest.builder()
-            .instanceType(awsInstanceType)
+            .instanceType(AWS_INSTANCE_TYPE)
             .maxCount(1)
             .minCount(1)
             .imageId(amiId)
@@ -164,11 +165,13 @@ public class AWSProvider extends Provider {
             throw e;
         }
 
+        String tagValue = callbacks.loadExtensionSetting(SettingsKeys.BURP_INSTANCE_ID);
+
         DescribeInstancesRequest describeRequest = DescribeInstancesRequest.builder()
             .filters(
                 Filter.builder()
-                    .name("tag-key")
-                    .values(instanceTag)
+                    .name("tag:" + INSTANCE_TAG)
+                    .values(tagValue)
                     .build(),
                 Filter.builder()
                     .name("instance-state-name")
@@ -219,7 +222,7 @@ public class AWSProvider extends Provider {
         JTextField awsAccessKeyTextField = new JTextField();
         awsAccessKeyTextField.setAlignmentX(Component.LEFT_ALIGNMENT);
         awsAccessKeyTextField.setPreferredSize(new Dimension(200, awsAccessKeyTextField.getPreferredSize().height));
-        awsAccessKeyTextField.setText(callbacks.loadExtensionSetting(awsAccessKeySetting));
+        awsAccessKeyTextField.setText(callbacks.loadExtensionSetting(AWS_ACCESS_KEY_SETTING));
 
         JLabel awsSecretKeyLabel = new JLabel("AWS Secret Key:");
         awsSecretKeyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -227,7 +230,7 @@ public class AWSProvider extends Provider {
         JPasswordField awsSecretKeyPasswordField = new JPasswordField();
         awsSecretKeyPasswordField.setAlignmentX(Component.LEFT_ALIGNMENT);
         awsSecretKeyPasswordField.setPreferredSize(new Dimension(200, awsSecretKeyPasswordField.getPreferredSize().height));
-        awsSecretKeyPasswordField.setText(callbacks.loadExtensionSetting(awsSecretKeySetting));
+        awsSecretKeyPasswordField.setText(callbacks.loadExtensionSetting(AWS_SECRET_KEY_SETTING));
 
         JLabel awsRegionLabel = new JLabel("Region:");
         awsRegionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -235,11 +238,11 @@ public class AWSProvider extends Provider {
         JComboBox<String> awsRegionComboBox = new JComboBox<>();
         awsRegionComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         awsRegionComboBox.setMaximumSize(new Dimension(125, awsRegionComboBox.getPreferredSize().height));
-        for (int i = 0; i < awsRegions.length; i++) {
-            awsRegionComboBox.addItem(awsRegions[i]);
+        for (int i = 0; i < AWS_REGIONS.length; i++) {
+            awsRegionComboBox.addItem(AWS_REGIONS[i]);
         }
 
-        String selectedRegion = callbacks.loadExtensionSetting(awsRegionSetting);
+        String selectedRegion = callbacks.loadExtensionSetting(AWS_REGION_SETTING);
         if (selectedRegion != null && !selectedRegion.isEmpty()) {
             awsRegionComboBox.setSelectedItem(selectedRegion);
         }
@@ -272,7 +275,7 @@ public class AWSProvider extends Provider {
 
             private void saveSetting() {
                 String value = awsAccessKeyTextField.getText();
-                callbacks.saveExtensionSetting(awsAccessKeySetting, value);
+                callbacks.saveExtensionSetting(AWS_ACCESS_KEY_SETTING, value);
             }
         });
 
@@ -292,7 +295,7 @@ public class AWSProvider extends Provider {
 
             private void saveSetting() {
                 String value = new String(awsSecretKeyPasswordField.getPassword());
-                callbacks.saveExtensionSetting(awsSecretKeySetting, value);
+                callbacks.saveExtensionSetting(AWS_SECRET_KEY_SETTING, value);
             }
         });
 
@@ -305,7 +308,7 @@ public class AWSProvider extends Provider {
                 }
 
                 awsRegion = selectedItem.toString();
-                callbacks.saveExtensionSetting(awsRegionSetting, awsRegion);
+                callbacks.saveExtensionSetting(AWS_REGION_SETTING, awsRegion);
             }
         });
 
@@ -320,8 +323,8 @@ public class AWSProvider extends Provider {
 
     private Ec2Client createClient() throws ProviderException {
         // Load the AWS keys from settings
-        String awsAccessKey = callbacks.loadExtensionSetting(awsAccessKeySetting);
-        String awsSecretKey = callbacks.loadExtensionSetting(awsSecretKeySetting);
+        String awsAccessKey = callbacks.loadExtensionSetting(AWS_ACCESS_KEY_SETTING);
+        String awsSecretKey = callbacks.loadExtensionSetting(AWS_SECRET_KEY_SETTING);
 
         if (awsAccessKey == null || awsSecretKey == null || awsAccessKey.isEmpty() || awsSecretKey.isEmpty()) {
             throw new ProviderException("missing API key(s)", null);
@@ -354,7 +357,7 @@ public class AWSProvider extends Provider {
         // Filter by architecture
         Filter architectureFilter = Filter.builder()
             .name("architecture")
-            .values(awsInstanceArch)
+            .values(AWS_INSTANCE_ARCH)
             .build();
 
         // Find the requested image

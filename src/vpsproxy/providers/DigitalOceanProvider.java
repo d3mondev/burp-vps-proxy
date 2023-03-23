@@ -14,11 +14,9 @@ import burp.IBurpExtenderCallbacks;
 import vpsproxy.*;
 
 public class DigitalOceanProvider extends Provider {
-    private IBurpExtenderCallbacks callbacks;
-
-    final private String doApiKeySettingKey = "Provider_DigitalOcean_APIKey";
-    final private String doRegionSettingKey = "Provider_DigitalOcean_Region";
-    final private String[] doRegions = {
+    final private String DO_API_KEY_SETTING = "Provider_DigitalOcean_APIKey";
+    final private String DO_REGION_SETTING = "Provider_DigitalOcean_Region";
+    final private String[] DO_REGIONS = {
         "nyc1",
         "nyc3",
         "ams3",
@@ -31,10 +29,15 @@ public class DigitalOceanProvider extends Provider {
         "syd1",
     };
 
+    private IBurpExtenderCallbacks callbacks;
+    private String doDropletTag = "burp-vps-proxy";
     private String doRegion = "nyc1";
 
     public DigitalOceanProvider(IBurpExtenderCallbacks callbacks) {
         this.callbacks = callbacks;
+
+        String burpInstanceId = callbacks.loadExtensionSetting(SettingsKeys.BURP_INSTANCE_ID);
+        doDropletTag = doDropletTag + "-" + burpInstanceId;
     }
 
     @Override
@@ -50,9 +53,9 @@ public class DigitalOceanProvider extends Provider {
         try {
             client = getClient();
 
-            String dropletName = String.format("burp-vps-proxy-%s", getRandomString(4));
+            String dropletName = String.format("burp-vps-proxy-%s", RandomString.generate(4));
             List<String> tags = new ArrayList<>();
-            tags.add("burp-vps-proxy");
+            tags.add(doDropletTag);
 
             Droplet droplet = new Droplet();
             droplet.setName(dropletName);
@@ -61,7 +64,7 @@ public class DigitalOceanProvider extends Provider {
             droplet.setSize("s-1vcpu-512mb-10gb");
             droplet.setTags(tags);
 
-            String password = getRandomString(12);
+            String password = RandomString.generate(12);
             droplet.setUserData(getProvisioningScript(password));
 
             droplet = client.createDroplet(droplet);
@@ -98,7 +101,7 @@ public class DigitalOceanProvider extends Provider {
             List<Droplet> droplets = client.getAvailableDroplets(0, Integer.MAX_VALUE).getDroplets();
             for (Droplet droplet : droplets) {
                 List<String> tags = droplet.getTags();
-                if (tags != null && tags.contains("burp-vps-proxy")) {
+                if (tags != null && tags.contains(doDropletTag)) {
                     client.deleteDroplet(droplet.getId());
                     logf("droplet %s deleted", droplet.getName());
                 }
@@ -121,7 +124,7 @@ public class DigitalOceanProvider extends Provider {
         JPasswordField apiKeyPasswordField = new JPasswordField();
         apiKeyPasswordField.setAlignmentX(Component.LEFT_ALIGNMENT);
         apiKeyPasswordField.setPreferredSize(new Dimension(200, apiKeyPasswordField.getPreferredSize().height));
-        apiKeyPasswordField.setText(callbacks.loadExtensionSetting(doApiKeySettingKey));
+        apiKeyPasswordField.setText(callbacks.loadExtensionSetting(DO_API_KEY_SETTING));
 
         JLabel doRegionLabel = new JLabel("Region:");
         doRegionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -129,11 +132,11 @@ public class DigitalOceanProvider extends Provider {
         JComboBox<String> doRegionComboBox = new JComboBox<>();
         doRegionComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         doRegionComboBox.setMaximumSize(new Dimension(75, doRegionComboBox.getPreferredSize().height));
-        for (int i = 0; i < doRegions.length; i++) {
-            doRegionComboBox.addItem(doRegions[i]);
+        for (int i = 0; i < DO_REGIONS.length; i++) {
+            doRegionComboBox.addItem(DO_REGIONS[i]);
         }
 
-        String selectedRegion = callbacks.loadExtensionSetting(doRegionSettingKey);
+        String selectedRegion = callbacks.loadExtensionSetting(DO_REGION_SETTING);
         if (selectedRegion != null && !selectedRegion.isEmpty()) {
             doRegionComboBox.setSelectedItem(selectedRegion);
         }
@@ -162,7 +165,7 @@ public class DigitalOceanProvider extends Provider {
 
             private void saveSetting() {
                 String value = new String(apiKeyPasswordField.getPassword());
-                callbacks.saveExtensionSetting(doApiKeySettingKey, value);
+                callbacks.saveExtensionSetting(DO_API_KEY_SETTING, value);
             }
         });
 
@@ -175,7 +178,7 @@ public class DigitalOceanProvider extends Provider {
                 }
 
                 doRegion = selectedItem.toString();
-                callbacks.saveExtensionSetting(doRegionSettingKey, doRegion);
+                callbacks.saveExtensionSetting(DO_REGION_SETTING, doRegion);
             }
         });
 
@@ -183,7 +186,7 @@ public class DigitalOceanProvider extends Provider {
     }
 
     private DigitalOcean getClient() throws ProviderException {
-        String apiKey = callbacks.loadExtensionSetting(doApiKeySettingKey);
+        String apiKey = callbacks.loadExtensionSetting(DO_API_KEY_SETTING);
         if (apiKey == null) {
             throw new ProviderException("no api key defined", null);
         }

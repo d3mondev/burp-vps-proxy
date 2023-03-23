@@ -60,7 +60,7 @@ public class VPSProxyTab implements ITab {
         optionsHeaderLabel.setForeground(headerColor);
 
         destroyProxyCheckBox = new JCheckBox();
-        String destroyProxy = extension.getCallbacks().loadExtensionSetting("DestroyProxy");
+        String destroyProxy = extension.getCallbacks().loadExtensionSetting(SettingsKeys.DESTROY_PROXY_ON_EXIT);
         if (destroyProxy == null || destroyProxy.equals("true")) {
             destroyProxyCheckBox.setSelected(true);
         }
@@ -77,7 +77,7 @@ public class VPSProxyTab implements ITab {
             providerComboBox.addItem(providerName);
         }
 
-        String selectedProviderName = extension.getCallbacks().loadExtensionSetting("SelectedProvider");
+        String selectedProviderName = extension.getCallbacks().loadExtensionSetting(SettingsKeys.CURRENT_PROVIDER);
         providerComboBox.setSelectedItem(selectedProviderName);
 
         deployButton = new JButton("Deploy");
@@ -158,7 +158,7 @@ public class VPSProxyTab implements ITab {
 
         this.panel.setLayout(layout);
 
-        String lastState = extension.getCallbacks().loadExtensionSetting("LastState");
+        String lastState = extension.getCallbacks().loadExtensionSetting(SettingsKeys.LAST_STATE);
         if (lastState != null && lastState.equals("running")) {
             setRunningState();
         }
@@ -202,9 +202,9 @@ public class VPSProxyTab implements ITab {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (destroyProxyCheckBox.isSelected()) {
-                    extension.getCallbacks().saveExtensionSetting("DestroyProxy", "true");
+                    extension.getCallbacks().saveExtensionSetting(SettingsKeys.DESTROY_PROXY_ON_EXIT, "true");
                 } else {
-                    extension.getCallbacks().saveExtensionSetting("DestroyProxy", "false");
+                    extension.getCallbacks().saveExtensionSetting(SettingsKeys.DESTROY_PROXY_ON_EXIT, "false");
                 }
             }
         });
@@ -230,7 +230,7 @@ public class VPSProxyTab implements ITab {
                 providerPanel.revalidate();
                 providerPanel.repaint();
 
-                extension.getCallbacks().saveExtensionSetting("SelectedProvider", selectedProvider.getName());
+                extension.getCallbacks().saveExtensionSetting(SettingsKeys.CURRENT_PROVIDER, selectedProvider.getName());
             }
         });
 
@@ -301,7 +301,7 @@ public class VPSProxyTab implements ITab {
     }
 
     public void setRunningState() {
-        extension.getCallbacks().saveExtensionSetting("LastState", "running");
+        extension.getCallbacks().saveExtensionSetting(SettingsKeys.LAST_STATE, "running");
 
         stopButton.setEnabled(true);
         stopButton.requestFocusInWindow();
@@ -319,7 +319,7 @@ public class VPSProxyTab implements ITab {
     }
 
     public void setStoppedState() {
-        extension.getCallbacks().saveExtensionSetting("LastState", "stopped");
+        extension.getCallbacks().saveExtensionSetting(SettingsKeys.LAST_STATE, "stopped");
 
         deployButton.setEnabled(true);
         deployButton.requestFocusInWindow();
