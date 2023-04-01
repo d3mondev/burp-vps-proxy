@@ -1,6 +1,10 @@
 plugins {
     id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
+
+group 'com.github.d3mondev.burpvpsproxy'
+version '1.0.0'
 
 repositories {
      mavenCentral()
@@ -24,9 +28,9 @@ sourceSets {
     }
 }
 
-task bigJar(type: Jar) {
-    archiveBaseName = project.name + '-all'
-    duplicatesStrategy = 'include'
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
+shadowJar {
+    archiveBaseName = project.name
+    archiveVersion = ''
 }
+
+build.dependsOn shadowJar

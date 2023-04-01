@@ -33,13 +33,13 @@ jobs:
       - name: Build with Gradle
         uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
         with:
-          arguments: bigjar
+          arguments: build
 
       - if: ${{ inputs.upload_artifact }}
         uses: actions/upload-artifact@v2
         with:
           name: Package
-          path: build/libs/burp-vps-proxy-all.jar
+          path: build/libs
 
       - if: ${{ inputs.attach_to_release }}
         name: Upload JAR to release
