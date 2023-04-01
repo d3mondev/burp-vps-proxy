@@ -1,0 +1,13 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build_and_attach:
+    uses: ./.github/workflows/build.yml
+    with:
+      attach_to_release: true
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}

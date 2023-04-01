@@ -1,0 +1,53 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      attach_to_release:
+        description: 'Attach JAR to release'
+        required: false
+        type: boolean
+        default: false
+      upload_artifact:
+        description: 'Upload JAR as artifact'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      token:
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b
+      - name: Build with Gradle
+        uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+        with:
+          arguments: bigjar
+
+      - if: ${{ inputs.upload_artifact }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: Package
+          path: build/libs/burp-vps-proxy-all.jar
+
+      - if: ${{ inputs.attach_to_release }}
+        name: Upload JAR to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: build/libs/burp-vps-proxy-all.jar
+          asset_name: burp-vps-proxy.jar
+          asset_content_type: application/java-archive
