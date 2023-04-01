@@ -43,11 +43,8 @@ jobs:
 
       - if: ${{ inputs.attach_to_release }}
         name: Upload JAR to release
-        uses: actions/upload-release-asset@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.token }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: build/libs/burp-vps-proxy-all.jar
-          asset_name: burp-vps-proxy.jar
-          asset_content_type: application/java-archive
+          files: build/libs/burp-vps-proxy.jar
