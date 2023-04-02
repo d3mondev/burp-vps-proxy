@@ -89,6 +89,16 @@ You will need to create an API key and enter it in the Burp VPS Proxy extension.
 
 Provisioning can take some time after the droplet is created. Wait a few minutes after the instance is up.
 
+## Linode
+
+![](assets/providers-linode.png)
+
+You will need to create an API key and enter it in the Burp VPS Proxy extension. This is done in the "My Settings -> API Tokens" section of your profile in your Linode dashboard. They call it a Personal Access Token.
+
+Ensure the API key has the Read/Write permission for "Linodes".
+
+Provisioning is done via SSH and the proxy is usually available as soon as the extension tells you.
+
 # Disclaimers & License
 
 The author and contributors of this extension expressly disclaim any liability for any costs, damages, or consequences resulting from the use of cloud providers in connection with this software.
