@@ -17,16 +17,16 @@ public class DigitalOceanProvider extends Provider {
     final private String DO_API_KEY_SETTING = "Provider_DigitalOcean_APIKey";
     final private String DO_REGION_SETTING = "Provider_DigitalOcean_Region";
     final private String[] DO_REGIONS = {
-        "nyc1",
-        "nyc3",
-        "ams3",
-        "sfo3",
-        "sgp1",
-        "lon1",
-        "fra1",
-        "tor1",
-        "blr1",
-        "syd1",
+            "nyc1",
+            "nyc3",
+            "ams3",
+            "sfo3",
+            "sgp1",
+            "lon1",
+            "fra1",
+            "tor1",
+            "blr1",
+            "syd1",
     };
 
     private IBurpExtenderCallbacks callbacks;
@@ -35,6 +35,11 @@ public class DigitalOceanProvider extends Provider {
 
     public DigitalOceanProvider(IBurpExtenderCallbacks callbacks) {
         this.callbacks = callbacks;
+
+        String region = callbacks.loadExtensionSetting(DO_REGION_SETTING);
+        if (region != null) {
+            doRegion = region;
+        }
 
         String burpInstanceId = callbacks.loadExtensionSetting(SettingsKeys.BURP_INSTANCE_ID);
         doDropletTag = doDropletTag + "-" + burpInstanceId;
@@ -85,7 +90,8 @@ public class DigitalOceanProvider extends Provider {
             }
 
             logf("droplet %s created", droplet.getName());
-            return new ProxySettings(droplet.getNetworks().getVersion4Networks().get(0).getIpAddress(), "1080", "burp-vps-proxy", password);
+            return new ProxySettings(droplet.getNetworks().getVersion4Networks().get(0).getIpAddress(), "1080",
+                    "burp-vps-proxy", password);
         } catch (ProviderException e) {
             throw e;
         } catch (Exception e) {
@@ -154,10 +160,12 @@ public class DigitalOceanProvider extends Provider {
             public void insertUpdate(DocumentEvent e) {
                 saveSetting();
             }
+
             @Override
             public void removeUpdate(DocumentEvent e) {
                 saveSetting();
             }
+
             @Override
             public void changedUpdate(DocumentEvent e) {
                 saveSetting();
