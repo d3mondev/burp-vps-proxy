@@ -50,9 +50,16 @@ public class VPSProxyTab implements ITab {
         this.panel = new JPanel();
 
         // Intro UI elements
-        JLabel introHelp1Label = new JLabel("Select the VPS provider you want to use and enter the proper API key(s). Then, you can click Deploy to launch a new proxy.");
-        JLabel introHelp2Label = new JLabel("Once created, the extension will automatically configure your SOCKS5 proxy in Burp -> Settings -> Network -> Connections.");
-        JLabel introHelp3Label = new JLabel("The proxy server will automatically be terminated when Burp exits or the extension is unloaded.");
+        JLabel introHeaderLabel = new JLabel("Burp VPS Proxy");
+        introHeaderLabel.setFont(headerFont);
+        introHeaderLabel.setForeground(headerColor);
+
+        JLabel introHelp1Label = new JLabel(
+                "Select the VPS provider you want to use and enter the proper API key(s). Then, you can click Deploy to launch a new proxy.");
+        JLabel introHelp2Label = new JLabel(
+                "Once created, the extension will automatically configure your SOCKS5 proxy in Burp -> Settings -> Network -> Connections.");
+        JLabel introHelp3Label = new JLabel(
+                "The proxy server will automatically be terminated when Burp exits or the extension is unloaded.");
 
         // Options UI elements
         JLabel optionsHeaderLabel = new JLabel("Options");
@@ -117,42 +124,44 @@ public class VPSProxyTab implements ITab {
         layout.setAutoCreateContainerGaps(true);
 
         layout.setHorizontalGroup(layout.createParallelGroup()
-            .addComponent(introHelp1Label)
-            .addComponent(introHelp2Label)
-            .addComponent(introHelp3Label)
-            .addComponent(optionsHeaderLabel)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(destroyProxyCheckBox)
-                .addComponent(destroyProxyLabel))
-            .addComponent(providerHeaderLabel)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(providerComboBox)
-                .addComponent(deployButton)
-                .addComponent(stopButton))
-            .addComponent(providerPanel)
-            .addComponent(logHeaderLabel)
-            .addComponent(logScrollPane));
+                .addComponent(introHeaderLabel)
+                .addComponent(introHelp1Label)
+                .addComponent(introHelp2Label)
+                .addComponent(introHelp3Label)
+                .addComponent(optionsHeaderLabel)
+                .addGroup(layout.createSequentialGroup()
+                        .addComponent(destroyProxyCheckBox)
+                        .addComponent(destroyProxyLabel))
+                .addComponent(providerHeaderLabel)
+                .addGroup(layout.createSequentialGroup()
+                        .addComponent(providerComboBox)
+                        .addComponent(deployButton)
+                        .addComponent(stopButton))
+                .addComponent(providerPanel)
+                .addComponent(logHeaderLabel)
+                .addComponent(logScrollPane));
 
         layout.setVerticalGroup(layout.createSequentialGroup()
-            .addComponent(introHelp1Label)
-            .addComponent(introHelp2Label)
-            .addComponent(introHelp3Label)
-            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, gapSize)
-            .addComponent(optionsHeaderLabel)
-            .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                .addComponent(destroyProxyCheckBox)
-                .addComponent(destroyProxyLabel))
-            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, gapSize)
-            .addComponent(providerHeaderLabel)
-            .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                .addComponent(providerComboBox)
-                .addComponent(deployButton)
-                .addComponent(stopButton))
-            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, 5)
-            .addComponent(providerPanel)
-            .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, 2 * gapSize)
-            .addComponent(logHeaderLabel)
-            .addComponent(logScrollPane));
+                .addComponent(introHeaderLabel)
+                .addComponent(introHelp1Label)
+                .addComponent(introHelp2Label)
+                .addComponent(introHelp3Label)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, gapSize)
+                .addComponent(optionsHeaderLabel)
+                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                        .addComponent(destroyProxyCheckBox)
+                        .addComponent(destroyProxyLabel))
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, gapSize)
+                .addComponent(providerHeaderLabel)
+                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                        .addComponent(providerComboBox)
+                        .addComponent(deployButton)
+                        .addComponent(stopButton))
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, 5)
+                .addComponent(providerPanel)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, 2 * gapSize)
+                .addComponent(logHeaderLabel)
+                .addComponent(logScrollPane));
 
         layout.linkSize(deployButton, stopButton);
 
@@ -230,7 +239,8 @@ public class VPSProxyTab implements ITab {
                 providerPanel.revalidate();
                 providerPanel.repaint();
 
-                extension.getCallbacks().saveExtensionSetting(SettingsKeys.CURRENT_PROVIDER, selectedProvider.getName());
+                extension.getCallbacks().saveExtensionSetting(SettingsKeys.CURRENT_PROVIDER,
+                        selectedProvider.getName());
             }
         });
 
@@ -310,7 +320,7 @@ public class VPSProxyTab implements ITab {
 
         Component[] providerPanelComponents = providerPanel.getComponents();
         if (providerPanelComponents.length != 0) {
-            JPanel panel = (JPanel)providerPanelComponents[0];
+            JPanel panel = (JPanel) providerPanelComponents[0];
             Component[] components = panel.getComponents();
             for (Component component : components) {
                 component.setEnabled(false);
@@ -328,7 +338,7 @@ public class VPSProxyTab implements ITab {
 
         Component[] providerPanelComponents = providerPanel.getComponents();
         if (providerPanelComponents.length != 0) {
-            JPanel panel = (JPanel)providerPanelComponents[0];
+            JPanel panel = (JPanel) providerPanelComponents[0];
             Component[] components = panel.getComponents();
             for (Component component : components) {
                 component.setEnabled(true);
