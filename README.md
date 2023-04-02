@@ -4,14 +4,15 @@
     <a href="https://twitter.com/d3mondev"><img src="https://img.shields.io/twitter/follow/d3mondev?logo=twitter&style=for-the-badge"></a>
 </p>
 
-<p align="center"><img src="assets/logo.png" width="500"></p>
-
+<p align="center"><img src="assets/logo.png" width="800"></p>
 <p align="center">
-    Burp VPS Proxy: Easy Cloud Proxies for Burp Suite
+    <span style="font-size: 24px">Burp VPS Proxy: Easy Cloud Proxies for Burp Suite</span>
     <br />
     <a href="#how-to-use"><strong>Getting Started »</strong></a>
     <br />
     <br />
+    <a href="#features">Features</a>
+    ·
     <a href="#providers">Providers</a>
     ·
     <a href="#disclaimers--license">Disclaimers</a>
