@@ -1,6 +1,9 @@
 package vpsproxy;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
 import burp.ITab;
 import java.awt.*;
 import java.awt.event.*;
@@ -112,8 +115,10 @@ public class VPSProxyTab implements ITab {
         logTextArea = new JTextArea();
         logTextArea.setEditable(false);
 
+        int logScrollPaneHeight = 400;
         logScrollPane = new JScrollPane(logTextArea);
         logScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        logScrollPane.setMaximumSize(new Dimension(Short.MAX_VALUE, logScrollPaneHeight));
 
         JScrollBar verticalBar = logScrollPane.getVerticalScrollBar();
         verticalBar.setValue(verticalBar.getMaximum());
@@ -160,8 +165,10 @@ public class VPSProxyTab implements ITab {
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, 5)
                 .addComponent(providerPanel)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, 2 * gapSize)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 0, Short.MAX_VALUE)
                 .addComponent(logHeaderLabel)
-                .addComponent(logScrollPane));
+                .addComponent(logScrollPane, GroupLayout.PREFERRED_SIZE, logScrollPaneHeight,
+                        GroupLayout.PREFERRED_SIZE));
 
         layout.linkSize(deployButton, stopButton);
 
@@ -186,23 +193,6 @@ public class VPSProxyTab implements ITab {
     }
 
     public void log(String message) {
-        JScrollBar verticalBar = logScrollPane.getVerticalScrollBar();
-        boolean autoScroll = verticalBar.getValue() == verticalBar.getMaximum();
-
-        if (autoScroll) {
-            AdjustmentListener scroller = new AdjustmentListener() {
-                @Override
-                public void adjustmentValueChanged(AdjustmentEvent e) {
-                    Adjustable adjustable = e.getAdjustable();
-                    adjustable.setValue(verticalBar.getMaximum());
-                    // We have to remove the listener, otherwise the
-                    // user would be unable to scroll afterwards
-                    verticalBar.removeAdjustmentListener(this);
-                }
-            };
-            verticalBar.addAdjustmentListener(scroller);
-        }
-
         logTextArea.append(message);
     }
 
@@ -291,6 +281,29 @@ public class VPSProxyTab implements ITab {
                     extension.destroyInstance(selectedProvider);
                 } catch (Exception ex) {
                 }
+            }
+        });
+
+        logTextArea.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                JScrollBar verticalBar = logScrollPane.getVerticalScrollBar();
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        verticalBar.setValue(verticalBar.getMaximum());
+                    }
+                });
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                // Do nothing
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                // Do nothing
             }
         });
     }
