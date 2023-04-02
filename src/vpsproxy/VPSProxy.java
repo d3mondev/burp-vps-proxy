@@ -1,7 +1,7 @@
 package vpsproxy;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import burp.IBurpExtenderCallbacks;
 import vpsproxy.providers.DigitalOceanProvider;
 import vpsproxy.providers.Provider.ProviderException;
@@ -19,7 +19,7 @@ public class VPSProxy {
         this.callbacks = callbacks;
         createBurpInstanceId();
 
-        providerMap = new HashMap<>();
+        providerMap = new LinkedHashMap<>();
         addProvider(new AWSProvider(callbacks));
         addProvider(new DigitalOceanProvider(callbacks));
         addProvider(new LinodeProvider(callbacks));
