@@ -1,5 +1,6 @@
 #!/bin/bash
-apt update && apt install dante-server
+export DEBIAN_FRONTEND=noninteractive
+apt-get -yq update && apt-get -yq install dante-server
 
 cat > /etc/danted.conf << EOF
 logoutput: syslog

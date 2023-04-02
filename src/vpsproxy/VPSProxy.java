@@ -22,6 +22,7 @@ public class VPSProxy {
         providerMap = new HashMap<>();
         addProvider(new AWSProvider(callbacks));
         addProvider(new DigitalOceanProvider(callbacks));
+        addProvider(new LinodeProvider(callbacks));
 
         optionsTab = new VPSProxyTab(this, providerMap);
         Logger.init(callbacks.getStdout(), optionsTab);
@@ -81,12 +82,14 @@ public class VPSProxy {
     }
 
     protected void configureProxy(ProxySettings proxy) {
-        Logger.log(String.format("Configuring proxy %s:%s:%s:%s", proxy.getIp(), proxy.getPort(), proxy.getUsername(), proxy.getPassword()));
+        Logger.log(String.format("Configuring proxy %s:%s:%s:%s", proxy.getIp(), proxy.getPort(), proxy.getUsername(),
+                proxy.getPassword()));
 
         String configBackup = callbacks.saveConfigAsJson("project_options.connections.socks_proxy");
         callbacks.saveExtensionSetting(SettingsKeys.PROXY_SETTINGS_BACKUP, configBackup);
 
-        String config = String.format(PROXY_CONFIG_TEMPLATE, proxy.getIp(), proxy.getPassword(), proxy.getPort(), proxy.getUsername());
+        String config = String.format(PROXY_CONFIG_TEMPLATE, proxy.getIp(), proxy.getPassword(), proxy.getPort(),
+                proxy.getUsername());
         callbacks.loadConfigFromJson(config);
 
         Logger.log("Proxy configured. The VPS could still be provisioning, please give it a few minutes.");
