@@ -284,7 +284,7 @@ public class LinodeProvider extends Provider {
     }
 
     private List<InstanceInfo> getInstanceIdsWithTag(String tag) throws Exception {
-        URL url = new URL(LINODE_API_BASE_URL + "/linode/instances" + tag);
+        URL url = new URL(LINODE_API_BASE_URL + "/linode/instances");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Authorization", "Bearer " + linodeApiKey);
