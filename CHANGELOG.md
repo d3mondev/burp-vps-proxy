@@ -7,15 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] - TBA
+## [1.0.0] - 2023-04-03
 
 ### Added
 
-- This BurpSuite extensions allows the automatic creation and deletion of upstream SOCKS5 proxy on popular cloud services.
-- Initial release supports multiple providers: AWS, Digital Ocean and Linode.
+- Automatic creation, configuration and deletion of upstream SOCKS5 proxy on popular cloud services from within BurpSuite.
+- Support for multiple providers: AWS, Digital Ocean and Linode.
 - Each provider has its unique settings, including region selection.
-- Automatically destroy proxy when closing Burp or unloading the extension, with the option to preserve the proxy across sessions instead.
-- When proxy is destroyed, restore SOCKS5 proxy settings in Burp to their original values.
+- Automatic destruction of proxy when closing Burp or unloading the extension, with an option to preserve the proxy across sessions instead.
+- Restores SOCKS5 proxy settings in Burp to their original values when the proxy is destroyed.
 - Compatibility across multiple devices, ensuring seamless use without interference from proxies generated on separate computers.
 
 [unreleased]: https://github.com/d3mondev/burp-vps-proxy/compare/v1.0.0...HEAD

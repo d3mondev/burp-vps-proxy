@@ -1,57 +1,56 @@
+<h3 align="center">Burp VPS Proxy: Easy Cloud Proxies for Burp Suite</h2>
+
+<p align="center"><img src="assets/logo.png" width="800"></p>
+
 <p align="center">
-    <img src="https://img.shields.io/github/actions/workflow/status/d3mondev/burp-vps-proxy/main.yml?branch=master&style=for-the-badge">
+    <img src="https://img.shields.io/github/actions/workflow/status/d3mondev/burp-vps-proxy/main.yml?branch=main&style=for-the-badge">
     <img src="https://img.shields.io/badge/License-GPL3-green.svg?style=for-the-badge">
     <a href="https://twitter.com/d3mondev"><img src="https://img.shields.io/twitter/follow/d3mondev?logo=twitter&style=for-the-badge"></a>
 </p>
 
-<p align="center"><img src="assets/logo.png" width="800"></p>
 <p align="center">
-    <span style="font-size: 24px">Burp VPS Proxy: Easy Cloud Proxies for Burp Suite</span>
-    <br />
-    <a href="#how-to-use"><strong>Getting Started »</strong></a>
+    <a href="#-how-to-use"><strong>Getting Started »</strong></a>
     <br />
     <br />
-    <a href="#features">Features</a>
+    <a href="#-features">Features</a>
     ·
-    <a href="#providers">Providers</a>
+    <a href="#-providers">Providers</a>
     ·
-    <a href="#disclaimers--license">Disclaimers</a>
+    <a href="#-disclaimers--license">Disclaimers</a>
 </p>
 
-# About
+# 📖 About
 
-Burp VPS Proxy is a BurpSuite extension that allows the automatic creation and deletion of upstream SOCKS5 proxies on popular cloud providers from within BurpSuite. It will automatically configure Burp to use the proxy created so that all outbound traffic comes from a cloud IP address. It's useful to prevent our main IP address from getting blacklisted by popular WAFs while doing pentesting and bug bounty hunting.
+Burp VPS Proxy is a BurpSuite extension that allows for the automatic creation and deletion of upstream SOCKS5 proxies on popular cloud providers from within BurpSuite. It automatically configures Burp to use the created proxy so that all outbound traffic comes from a cloud IP address. This is useful to prevent our main IP address from being blacklisted by popular WAFs while performing penetration testing and bug bounty hunting.
 
 Burp VPS Proxy was inspired by @honoki's awesome [DigitalOcean Droplet Proxy for Burp Suite](https://github.com/honoki/burp-digitalocean-droplet-proxy) idea.
 
-# Features
+# 🛠 Features
 
 * Automatic creation, configuration and deletion of upstream SOCKS5 proxy on popular cloud services from within BurpSuite.
 * Support for multiple providers: AWS, Digital Ocean and Linode.
 * Each provider has its unique settings, including region selection.
-* Automatically destroy the proxy when closing Burp or unloading the extension, with the option to preserve the proxy across sessions instead.
-* When the proxy is destroyed, restore SOCKS5 proxy settings in Burp to their original values.
+* Automatic destruction of proxy when closing Burp or unloading the extension, with an option to preserve the proxy across sessions instead.
+* Restores SOCKS5 proxy settings in Burp to their original values when the proxy is destroyed.
 * Compatibility across multiple devices, ensuring seamless use without interference from proxies generated on separate computers.
 
-# How to use
+# 🔎 How to use
 
 Visit the [release page](https://github.com/d3mondev/burp-vps-proxy/releases) and download the latest `burp-vps-proxy.jar` file.
 
-In BurpSuite's extension tab, visit the Extensions tab and click Add. Set the extension type to Java, and select the `burp-vps-proxy.jar` file.
+In BurpSuite, visit the Extensions tab and click Add. Set the extension type to Java, and select the `burp-vps-proxy.jar` file.
 
 Once loaded, access the extension via the new VPS Proxy tab in Burp. Select your provider, set your API keys and click Deploy.
 
-# Providers
+# 🌐 Providers
 
 ## Amazon Web Services (AWS)
 
 ![](assets/providers-aws.png)
 
-The extension will use the t4g.nano instance type to minimize costs. Note that not all regions support this instance type.
+The extension will use the `t4g.nano` instance type to minimize costs. Note that not all regions support this instance type. The extension will also create a security group named `burp-vps-proxy` in the region selected to allow connections to port 1080.
 
-You will need an AWS Access Key and AWS Private Key in order to configure the extension.
-
-You'll also need to ensure the key pair gives access to at least the following permissions:
+You will need an AWS Access Key and AWS Private Key in order to configure the extension. You'll also need to ensure the key pair gives access to at least the following permissions:
 
 ```
 {
@@ -99,7 +98,7 @@ Ensure the API key has the Read/Write permission for "Linodes".
 
 Provisioning is done via SSH and the proxy is usually available as soon as the extension tells you.
 
-# Disclaimers & License
+# ⚖ Disclaimers & License
 
 The author and contributors of this extension expressly disclaim any liability for any costs, damages, or consequences resulting from the use of cloud providers in connection with this software.
 
