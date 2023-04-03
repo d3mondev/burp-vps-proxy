@@ -1,7 +1,7 @@
 package vpsproxy;
 
-import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import burp.IBurpExtenderCallbacks;
 import vpsproxy.providers.DigitalOceanProvider;
 import vpsproxy.providers.Provider.ProviderException;
@@ -26,6 +26,8 @@ public class VPSProxy {
 
         optionsTab = new VPSProxyTab(this, providerMap);
         Logger.init(callbacks.getStdout(), optionsTab);
+
+        restorePreviousProxy();
     }
 
     public VPSProxyTab getUI() {
@@ -85,12 +87,15 @@ public class VPSProxy {
         Logger.log(String.format("Configuring proxy %s:%s:%s:%s", proxy.getIp(), proxy.getPort(), proxy.getUsername(),
                 proxy.getPassword()));
 
+        // Save current config
         String configBackup = callbacks.saveConfigAsJson("project_options.connections.socks_proxy");
         callbacks.saveExtensionSetting(SettingsKeys.PROXY_SETTINGS_BACKUP, configBackup);
 
+        // Set new proxy settings
         String config = String.format(PROXY_CONFIG_TEMPLATE, proxy.getIp(), proxy.getPassword(), proxy.getPort(),
                 proxy.getUsername());
         callbacks.loadConfigFromJson(config);
+        callbacks.saveExtensionSetting(SettingsKeys.PROXY_SETTINGS, config);
 
         Logger.log("Proxy configured. The VPS could still be provisioning, please give it a few minutes.");
     }
@@ -101,6 +106,15 @@ public class VPSProxy {
             Logger.log("Restoring proxy settings");
             callbacks.loadConfigFromJson(config);
             callbacks.saveExtensionSetting(SettingsKeys.PROXY_SETTINGS_BACKUP, null);
+            callbacks.saveExtensionSetting(SettingsKeys.PROXY_SETTINGS, null);
+        }
+    }
+
+    protected void restorePreviousProxy() {
+        String config = callbacks.loadExtensionSetting(SettingsKeys.PROXY_SETTINGS);
+        if (config != null) {
+            Logger.log("Setting proxy from previous session");
+            callbacks.loadConfigFromJson(config);
         }
     }
 

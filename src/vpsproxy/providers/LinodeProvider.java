@@ -284,7 +284,7 @@ public class LinodeProvider extends Provider {
     }
 
     private List<InstanceInfo> getInstanceIdsWithTag(String tag) throws Exception {
-        URL url = new URL(LINODE_API_BASE_URL + "/linode/instances?tags=" + tag);
+        URL url = new URL(LINODE_API_BASE_URL + "/linode/instances" + tag);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Authorization", "Bearer " + linodeApiKey);
@@ -336,8 +336,8 @@ public class LinodeProvider extends Provider {
             elapsed += 5;
         }
 
-        // Wait an extra 10 seconds otherwise the server may not be ready to accept
+        // Wait an extra 5 seconds otherwise the server may not be ready to accept
         // connections
-        Thread.sleep(10000);
+        Thread.sleep(5000);
     }
 }

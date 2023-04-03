@@ -9,4 +9,5 @@ public final class SettingsKeys {
     public static final String LAST_STATE = "LastState";
     public static final String CURRENT_PROVIDER = "CurrentProvider";
     public static final String PROXY_SETTINGS_BACKUP = "ProxySettingsBackup";
+    public static final String PROXY_SETTINGS = "ProxySettings";
 }
