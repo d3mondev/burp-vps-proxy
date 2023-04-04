@@ -21,13 +21,15 @@
 
 # 📖 About
 
-Burp VPS Proxy is a BurpSuite extension that allows for the automatic creation and deletion of upstream SOCKS5 proxies on popular cloud providers from within BurpSuite. It automatically configures Burp to use the created proxy so that all outbound traffic comes from a cloud IP address. This is useful to prevent our main IP address from being blacklisted by popular WAFs while performing penetration testing and bug bounty hunting.
+Burp VPS Proxy is a Burp Suite extension that allows for the automatic creation and deletion of upstream SOCKS5 proxies on popular cloud providers from within Burp Suite. It automatically configures Burp to use the created proxy so that all outbound traffic comes from a cloud IP address. This is useful to prevent our main IP address from being blacklisted by popular WAFs while performing penetration testing and bug bounty hunting.
 
 Burp VPS Proxy was inspired by @honoki's awesome [DigitalOcean Droplet Proxy for Burp Suite](https://github.com/honoki/burp-digitalocean-droplet-proxy) idea.
 
+Think this is useful? ⭐ Star us on GitHub — it helps!
+
 # 🛠 Features
 
-* Automatic creation, configuration and deletion of upstream SOCKS5 proxy on popular cloud services from within BurpSuite.
+* Automatic creation, configuration and deletion of upstream SOCKS5 proxy on popular cloud services from within Burp Suite.
 * Support for multiple providers: AWS, Digital Ocean and Linode.
 * Each provider has its unique settings, including region selection.
 * Automatic destruction of proxy when closing Burp or unloading the extension, with an option to preserve the proxy across sessions instead.
@@ -38,7 +40,7 @@ Burp VPS Proxy was inspired by @honoki's awesome [DigitalOcean Droplet Proxy for
 
 Visit the [release page](https://github.com/d3mondev/burp-vps-proxy/releases) and download the latest `burp-vps-proxy.jar` file.
 
-In BurpSuite, visit the Extensions tab and click Add. Set the extension type to Java, and select the `burp-vps-proxy.jar` file.
+In Burp Suite, visit the Extensions tab and click Add. Set the extension type to Java, and select the `burp-vps-proxy.jar` file.
 
 Once loaded, access the extension via the new VPS Proxy tab in Burp. Select your provider, set your API keys and click Deploy.
 
