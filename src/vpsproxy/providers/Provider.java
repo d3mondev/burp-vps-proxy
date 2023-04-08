@@ -16,6 +16,9 @@ import com.jcraft.jsch.Session;
 import vpsproxy.Logger;
 import vpsproxy.ProxySettings;
 
+/**
+ * Implements the base Provider class from which all providers derive.
+ */
 public abstract class Provider {
     public class ProviderException extends Exception {
         public ProviderException(String message, Throwable cause) {
@@ -29,17 +32,75 @@ public abstract class Provider {
     private static String script;
     private static boolean debug = false;
 
+    /**
+     * Gets the name of the provider
+     *
+     * @return the name of the provider
+     */
     public abstract String getName();
 
+    /**
+     * Starts a new VPS instance on the provider.
+     *
+     * The instance should have a tag that allows the destroyInstance() method to
+     * delete
+     * all the instances created by the extension.
+     *
+     * Additionnally, the startInstance method should ensure that the VPS is
+     * correctly configured as
+     * a SOCKS5 proxy with a username and adequate password.
+     *
+     * @return The settings of the newly-created proxy
+     * @throws ProviderException
+     */
     public abstract ProxySettings startInstance() throws ProviderException;
 
+    /**
+     * Destroys all the instances started by the extension on the provider.
+     *
+     * All instances that have been tagged by the startInstance method should be
+     * destroyed.
+     * This ensures that instances failing to start correctly are also removed
+     * from the provider, helping payment for orphaned instances.
+     *
+     * Extra caution is necessary to ensure ONLY tagged instances are deleted,
+     * as deleting active VPS instances in the account may occur otherwise.
+     *
+     * @throws ProviderException
+     */
     public abstract void destroyInstance() throws ProviderException;
 
+    /**
+     * Creates the UI containing the extension's settings.
+     *
+     * @return A JComponent containing the UI components, typically a JPanel
+     */
     public abstract JComponent getUI();
 
+    /**
+     * Closes any resources used by the provider.
+     *
+     * Close is called whether the current provider is active or not.
+     * Typically, this function doesn't need to do anything unless
+     * there are special resources that need to be deleted when the extension
+     * is unloaded.
+     *
+     * @throws ProviderException
+     */
     public void close() throws ProviderException {
     }
 
+    /**
+     * Called on the current provider when the extension is loaded
+     * and the provider is active. This method is called after the proxy
+     * settings have been restored in Burp Suite.
+     *
+     * It should only be used if the provider needs to perform some sort of action
+     * in order to activate the proxy. Typically, this function doesn't need
+     * to do anything.
+     *
+     * @throws ProviderException
+     */
     public void onRestore() throws ProviderException {
     }
 
@@ -104,14 +165,18 @@ public abstract class Provider {
         BufferedReader errOutputReader = new BufferedReader(new InputStreamReader(errorStream));
 
         String line;
-        // log("Standard Output:");
+        if (debug) {
+            log("Standard Output:");
+        }
         while ((line = stdOutputReader.readLine()) != null) {
             if (debug) {
                 log(line);
             }
         }
 
-        // log("Error Output:");
+        if (debug) {
+            log("Error Output:");
+        }
         while ((line = errOutputReader.readLine()) != null) {
             if (debug) {
                 log(line);
