@@ -1,8 +1,8 @@
 package vpsproxy.providers;
 
 import java.awt.Dimension;
-import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Properties;
 
 import javax.swing.*;
@@ -15,35 +15,30 @@ import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.client.keyverifier.AcceptAllServerKeyVerifier;
 import org.apache.sshd.client.config.hosts.HostConfigEntryResolver;
+import org.apache.sshd.client.future.AuthFuture;
 import org.apache.sshd.server.forward.AcceptAllForwardingFilter;
 import org.apache.sshd.common.util.net.SshdSocketAddress;
 
 public class SSHProvider extends Provider {
     private IBurpExtenderCallbacks callbacks;
 
-    final private String SSH_HOST_KEY = "Provider_SSH_Host";
-    final private String SSH_PORT_KEY = "Provider_SSH_Port";
-    final private String SSH_LOCALPORT_KEY = "Provider_SSH_LocalPort";
-    final private String SSH_AUTH_TYPE_KEY = "Provider_SSH_AuthType";
-    final private String SSH_AUTH_USERNAME_KEY = "Provider_SSH_Username";
-    final private String SSH_AUTH_PASSWORD_KEY = "Provider_SSH_Password";
-    final private String SSH_AUTH_KEYFILE_KEY = "Provider_SSH_KeyFile";
+    final private String SSH_HOST = "Provider_SSH_Host";
+    final private String SSH_PORT = "Provider_SSH_Port";
+    final private String SSH_LOCALPORT = "Provider_SSH_LocalPort";
+    final private String SSH_AUTH_USERNAME = "Provider_SSH_Username";
+    final private String SSH_AUTH_PASSWORD = "Provider_SSH_Password";
 
     private SshTunnel tunnel;
-
-    private JRadioButton passwordRadioButton;
-    private JPasswordField passwordField;
-    private JRadioButton keyFileRadioButton;
-    private JTextField keyFilePathField;
-    private JButton selectKeyFileButton;
 
     private static class SshTunnel {
         private final SshClient client;
         private final ClientSession session;
+        private final SshdSocketAddress tun;
 
-        public SshTunnel(SshClient client, ClientSession session) {
+        public SshTunnel(SshClient client, ClientSession session, SshdSocketAddress tun) {
             this.client = client;
             this.session = session;
+            this.tun = tun;
         }
 
         public void close() {
@@ -53,6 +48,14 @@ public class SSHProvider extends Provider {
             if (client != null) {
                 client.stop();
             }
+        }
+
+        public String getLocalHostname() {
+            return tun.getHostName();
+        }
+
+        public int getLocalPort() {
+            return tun.getPort();
         }
     }
 
@@ -69,7 +72,7 @@ public class SSHProvider extends Provider {
 
     @Override
     public String getName() {
-        return "SSH";
+        return "SSH (experimental)";
     }
 
     @Override
@@ -77,11 +80,11 @@ public class SSHProvider extends Provider {
         // TODO: support automatic reconnecting when extension is loaded
         log("connecting to SSH proxy");
 
-        String host = callbacks.loadExtensionSetting(SSH_HOST_KEY);
-        String portStr = callbacks.loadExtensionSetting(SSH_PORT_KEY);
-        String username = callbacks.loadExtensionSetting(SSH_AUTH_USERNAME_KEY);
-        String password = callbacks.loadExtensionSetting(SSH_AUTH_PASSWORD_KEY);
-        String localPortStr = callbacks.loadExtensionSetting(SSH_LOCALPORT_KEY);
+        String host = callbacks.loadExtensionSetting(SSH_HOST);
+        String portStr = callbacks.loadExtensionSetting(SSH_PORT);
+        String username = callbacks.loadExtensionSetting(SSH_AUTH_USERNAME);
+        String password = callbacks.loadExtensionSetting(SSH_AUTH_PASSWORD);
+        String localPortStr = callbacks.loadExtensionSetting(SSH_LOCALPORT);
 
         int port, localPort;
         try {
@@ -100,8 +103,7 @@ public class SSHProvider extends Provider {
             throw new ProviderException("error creating SSH tunnel: " + e.getMessage(), e);
         }
 
-        // TODO: get real addr
-        return new ProxySettings("127.0.0.1", localPortStr, "", "");
+        return new ProxySettings(tunnel.getLocalHostname(), Integer.toString(tunnel.getLocalPort()), "", "");
     }
 
     @Override
@@ -118,69 +120,61 @@ public class SSHProvider extends Provider {
 
     @Override
     public JComponent getUI() {
+        final int textFieldWidth = 150;
+
         JPanel panel = new JPanel();
 
         // Info
-        JLabel infoLabel = new JLabel("This provider allows the use of a remote SSH connection as SOCKS5 proxy.");
+        JLabel infoLabel = new JLabel("This provider enables the use of a remote SSH connection as a SOCKS5 proxy.");
 
         // Remote host
         JLabel hostLabel = new JLabel("Host:");
         JTextField hostField = new JTextField();
-        hostField.setPreferredSize(new Dimension(150, hostField.getPreferredSize().height));
-        hostField.setText(callbacks.loadExtensionSetting(SSH_HOST_KEY));
+        hostField.setMinimumSize(new Dimension(textFieldWidth, hostField.getPreferredSize().height));
+        hostField.setMaximumSize(new Dimension(textFieldWidth, hostField.getPreferredSize().height));
+        hostField.setText(callbacks.loadExtensionSetting(SSH_HOST));
 
         JLabel hostPortLabel = new JLabel("Port:");
         JTextField hostPortField = new JTextField();
-        hostPortField.setPreferredSize(new Dimension(55, hostPortField.getPreferredSize().height));
+        hostPortField.setMinimumSize(new Dimension(55, hostPortField.getPreferredSize().height));
+        hostPortField.setMaximumSize(new Dimension(55, hostPortField.getPreferredSize().height));
 
-        String hostPort = callbacks.loadExtensionSetting(SSH_PORT_KEY);
+        String hostPort = callbacks.loadExtensionSetting(SSH_PORT);
         hostPort = null;
         if (hostPort == null) {
             hostPort = "22";
-            callbacks.saveExtensionSetting(SSH_PORT_KEY, hostPort);
+            callbacks.saveExtensionSetting(SSH_PORT, hostPort);
         }
         hostPortField.setText(hostPort);
 
         // Credentials
         JLabel usernameLabel = new JLabel("Username:");
         JTextField usernameField = new JTextField();
-        usernameField.setText(callbacks.loadExtensionSetting(SSH_AUTH_USERNAME_KEY));
+        usernameField.setMinimumSize(new Dimension(textFieldWidth, usernameField.getPreferredSize().height));
+        usernameField.setMaximumSize(new Dimension(textFieldWidth, usernameField.getPreferredSize().height));
+        usernameField.setText(callbacks.loadExtensionSetting(SSH_AUTH_USERNAME));
 
-        passwordRadioButton = new JRadioButton("Password:", true);
-        passwordField = new JPasswordField();
-        passwordField.setText(callbacks.loadExtensionSetting(SSH_AUTH_PASSWORD_KEY));
-
-        keyFileRadioButton = new JRadioButton("Key File:", false);
-        keyFilePathField = new JTextField();
-        keyFilePathField.setText(callbacks.loadExtensionSetting(SSH_AUTH_KEYFILE_KEY));
-        selectKeyFileButton = new JButton("Select file ...");
-
-        ButtonGroup credsButtonGroup = new ButtonGroup();
-        credsButtonGroup.add(passwordRadioButton);
-        credsButtonGroup.add(keyFileRadioButton);
-
-        String authType = callbacks.loadExtensionSetting(SSH_AUTH_TYPE_KEY);
-        if (authType != null) {
-            setAuthType(authType);
-        } else {
-            setAuthType("password");
-        }
+        JLabel passwordLabel = new JLabel("Password:");
+        JPasswordField passwordField = new JPasswordField();
+        passwordField.setMinimumSize(new Dimension(textFieldWidth, passwordField.getPreferredSize().height));
+        passwordField.setMaximumSize(new Dimension(textFieldWidth, passwordField.getPreferredSize().height));
+        passwordField.setText(callbacks.loadExtensionSetting(SSH_AUTH_PASSWORD));
 
         // Local port for proxy
         JLabel localPortLabel = new JLabel("Local port:");
         JTextField localPortField = new JTextField();
+        localPortField.setMinimumSize(new Dimension(55, localPortField.getPreferredSize().height));
+        localPortField.setMaximumSize(new Dimension(55, localPortField.getPreferredSize().height));
 
-        String localPort = callbacks.loadExtensionSetting(SSH_LOCALPORT_KEY);
+        String localPort = callbacks.loadExtensionSetting(SSH_LOCALPORT);
         if (localPort == null) {
             localPort = "1080";
-            callbacks.saveExtensionSetting(SSH_LOCALPORT_KEY, localPort);
+            callbacks.saveExtensionSetting(SSH_LOCALPORT, localPort);
         }
         localPortField.setText(localPort);
 
         GroupLayout layout = new GroupLayout(panel);
         layout.setAutoCreateGaps(true);
-        layout.linkSize(hostField, usernameField, passwordField, keyFilePathField);
-        layout.linkSize(hostPortField, localPortField);
 
         panel.setLayout(layout);
 
@@ -190,8 +184,7 @@ public class SSHProvider extends Provider {
                         .addGroup(layout.createParallelGroup()
                                 .addComponent(hostLabel)
                                 .addComponent(usernameLabel)
-                                .addComponent(passwordRadioButton)
-                                .addComponent(keyFileRadioButton)
+                                .addComponent(passwordLabel)
                                 .addComponent(localPortLabel))
                         .addGroup(layout.createParallelGroup()
                                 .addGroup(layout.createSequentialGroup()
@@ -200,9 +193,6 @@ public class SSHProvider extends Provider {
                                         .addComponent(hostPortField))
                                 .addComponent(usernameField)
                                 .addComponent(passwordField)
-                                .addGroup(layout.createSequentialGroup()
-                                        .addComponent(keyFilePathField)
-                                        .addComponent(selectKeyFileButton))
                                 .addComponent(localPortField))));
 
         layout.setVerticalGroup(layout.createSequentialGroup()
@@ -217,32 +207,11 @@ public class SSHProvider extends Provider {
                         .addComponent(usernameLabel)
                         .addComponent(usernameField))
                 .addGroup(layout.createParallelGroup()
-                        .addComponent(passwordRadioButton)
+                        .addComponent(passwordLabel)
                         .addComponent(passwordField))
-                .addGroup(layout.createParallelGroup()
-                        .addComponent(keyFileRadioButton)
-                        .addComponent(keyFilePathField)
-                        .addComponent(selectKeyFileButton))
                 .addGroup(layout.createParallelGroup()
                         .addComponent(localPortLabel)
                         .addComponent(localPortField)));
-
-        passwordRadioButton.addActionListener(e -> {
-            setAuthType("password");
-        });
-
-        keyFileRadioButton.addActionListener(e -> {
-            setAuthType("keyfile");
-        });
-
-        selectKeyFileButton.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser();
-            int returnValue = fileChooser.showOpenDialog(panel);
-            if (returnValue == JFileChooser.APPROVE_OPTION) {
-                File selectedFile = fileChooser.getSelectedFile();
-                keyFilePathField.setText(selectedFile.getAbsolutePath());
-            }
-        });
 
         hostField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -261,7 +230,7 @@ public class SSHProvider extends Provider {
             }
 
             private void saveSetting() {
-                callbacks.saveExtensionSetting(SSH_HOST_KEY, hostField.getText());
+                callbacks.saveExtensionSetting(SSH_HOST, hostField.getText());
             }
         });
 
@@ -282,7 +251,7 @@ public class SSHProvider extends Provider {
             }
 
             private void saveSetting() {
-                callbacks.saveExtensionSetting(SSH_PORT_KEY, hostPortField.getText());
+                callbacks.saveExtensionSetting(SSH_PORT, hostPortField.getText());
             }
         });
 
@@ -303,7 +272,7 @@ public class SSHProvider extends Provider {
             }
 
             private void saveSetting() {
-                callbacks.saveExtensionSetting(SSH_AUTH_USERNAME_KEY, usernameField.getText());
+                callbacks.saveExtensionSetting(SSH_AUTH_USERNAME, usernameField.getText());
             }
         });
 
@@ -325,28 +294,7 @@ public class SSHProvider extends Provider {
 
             private void saveSetting() {
                 String value = new String(passwordField.getPassword());
-                callbacks.saveExtensionSetting(SSH_AUTH_PASSWORD_KEY, value);
-            }
-        });
-
-        keyFilePathField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                saveSetting();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                saveSetting();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                saveSetting();
-            }
-
-            private void saveSetting() {
-                callbacks.saveExtensionSetting(SSH_AUTH_KEYFILE_KEY, keyFilePathField.getText());
+                callbacks.saveExtensionSetting(SSH_AUTH_PASSWORD, value);
             }
         });
 
@@ -367,7 +315,7 @@ public class SSHProvider extends Provider {
             }
 
             private void saveSetting() {
-                callbacks.saveExtensionSetting(SSH_LOCALPORT_KEY, localPortField.getText());
+                callbacks.saveExtensionSetting(SSH_LOCALPORT, localPortField.getText());
             }
         });
 
@@ -376,43 +324,37 @@ public class SSHProvider extends Provider {
 
     private static SshTunnel createSshTunnel(String host, int port, String username, String password, int localPort)
             throws IOException {
+        final int timeout = 5000;
         SshClient client = SshClient.setUpDefaultClient();
+
+        // Enable forwarding
         client.setForwardingFilter(AcceptAllForwardingFilter.INSTANCE);
+
+        // Accept all server keys
         client.setServerKeyVerifier(AcceptAllServerKeyVerifier.INSTANCE);
-        client.setHostConfigEntryResolver(HostConfigEntryResolver.EMPTY); // Needed to ignore default ~/.ssh/config
+
+        // Ignore default ~/.ssh/config
+        client.setHostConfigEntryResolver(HostConfigEntryResolver.EMPTY);
+
         client.start();
 
         ClientSession session = client.connect(username, host, port)
-                .verify()
+                .verify(timeout)
                 .getSession();
 
-        // TODO: support key identity
         session.addPasswordIdentity(password);
 
-        session.auth().verify();
-        if (!session.isAuthenticated()) { // TODO: not working
+        AuthFuture authFuture = session.auth();
+        boolean authCompleted = authFuture.await(timeout);
+        if (!authCompleted || !session.isAuthenticated()) {
             throw new IOException("Authentication failed: Invalid username or password.");
         }
 
-        // TODO: get real localhost
-        session.startDynamicPortForwarding(new SshdSocketAddress("127.0.0.1", localPort));
+        // TODO: weird localhost
+        InetAddress localhost = InetAddress.getLocalHost();
+        SshdSocketAddress tunAddr = session
+                .startDynamicPortForwarding(new SshdSocketAddress(localhost.getHostAddress(), localPort));
 
-        return new SshTunnel(client, session);
-    }
-
-    private void setAuthType(String authType) {
-        if (authType.equals("password")) {
-            passwordRadioButton.setSelected(true);
-            // passwordField.setEnabled(true);
-            // keyFilePathField.setEnabled(false);
-            // selectKeyFileButton.setEnabled(false);
-            callbacks.saveExtensionSetting(SSH_AUTH_TYPE_KEY, "password");
-        } else if (authType.equals("keyfile")) {
-            keyFileRadioButton.setSelected(true);
-            // passwordField.setEnabled(false);
-            // keyFilePathField.setEnabled(true);
-            // selectKeyFileButton.setEnabled(true);
-            callbacks.saveExtensionSetting(SSH_AUTH_TYPE_KEY, "keyfile");
-        }
+        return new SshTunnel(client, session, tunAddr);
     }
 }
