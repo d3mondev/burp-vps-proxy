@@ -85,9 +85,7 @@ public class VPSProxy {
     }
 
     protected void configureProxy(ProxySettings proxy) {
-        // TODO: don't print user & pass if they're empty
-        Logger.log(String.format("Configuring proxy %s:%s:%s:%s", proxy.getIp(), proxy.getPort(), proxy.getUsername(),
-                proxy.getPassword()));
+        Logger.log("Configuring proxy " + proxy);
 
         // Save current config
         String configBackup = callbacks.saveConfigAsJson("project_options.connections.socks_proxy");

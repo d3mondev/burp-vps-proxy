@@ -350,8 +350,7 @@ public class SSHProvider extends Provider {
             throw new IOException("Authentication failed: Invalid username or password.");
         }
 
-        // TODO: weird localhost
-        InetAddress localhost = InetAddress.getLocalHost();
+        InetAddress localhost = InetAddress.getLoopbackAddress();
         SshdSocketAddress tunAddr = session
                 .startDynamicPortForwarding(new SshdSocketAddress(localhost.getHostAddress(), localPort));
 

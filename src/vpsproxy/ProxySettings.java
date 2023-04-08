@@ -28,4 +28,19 @@ public class ProxySettings {
     public String getPassword() {
         return password;
     }
+
+    @Override
+    public String toString() {
+        String str = ip + ":" + port;
+
+        if (username != null && !username.isEmpty()) {
+            str += ":" + username;
+        }
+
+        if (password != null && !password.isEmpty()) {
+            str += ":" + password;
+        }
+
+        return str;
+    }
 }
