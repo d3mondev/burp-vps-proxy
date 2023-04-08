@@ -2,12 +2,21 @@ package vpsproxy.providers;
 
 import java.awt.Dimension;
 import java.io.File;
+import java.io.IOException;
+import java.util.Properties;
 
 import javax.swing.*;
 import javax.swing.event.*;
 
 import burp.IBurpExtenderCallbacks;
 import vpsproxy.*;
+
+import org.apache.sshd.client.SshClient;
+import org.apache.sshd.client.session.ClientSession;
+import org.apache.sshd.client.keyverifier.AcceptAllServerKeyVerifier;
+import org.apache.sshd.client.config.hosts.HostConfigEntryResolver;
+import org.apache.sshd.server.forward.AcceptAllForwardingFilter;
+import org.apache.sshd.common.util.net.SshdSocketAddress;
 
 public class SSHProvider extends Provider {
     private IBurpExtenderCallbacks callbacks;
@@ -20,14 +29,42 @@ public class SSHProvider extends Provider {
     final private String SSH_AUTH_PASSWORD_KEY = "Provider_SSH_Password";
     final private String SSH_AUTH_KEYFILE_KEY = "Provider_SSH_KeyFile";
 
+    private SshTunnel tunnel;
+
     private JRadioButton passwordRadioButton;
     private JPasswordField passwordField;
     private JRadioButton keyFileRadioButton;
     private JTextField keyFilePathField;
     private JButton selectKeyFileButton;
 
+    private static class SshTunnel {
+        private final SshClient client;
+        private final ClientSession session;
+
+        public SshTunnel(SshClient client, ClientSession session) {
+            this.client = client;
+            this.session = session;
+        }
+
+        public void close() {
+            if (session != null) {
+                session.close(true);
+            }
+            if (client != null) {
+                client.stop();
+            }
+        }
+    }
+
     public SSHProvider(IBurpExtenderCallbacks callbacks) {
         this.callbacks = callbacks;
+
+        // org.apache.sshd tries to use BounceCastle by default but we can't seem
+        // to do this in a Burp extension. Disable it so that the package uses the
+        // default security providers
+        Properties systemProperties = System.getProperties();
+        systemProperties.put("org.apache.sshd.security.provider.BC.enabled", "false");
+        System.setProperties(systemProperties);
     }
 
     @Override
@@ -37,14 +74,46 @@ public class SSHProvider extends Provider {
 
     @Override
     public ProxySettings startInstance() throws ProviderException {
+        // TODO: support automatic reconnecting when extension is loaded
         log("connecting to SSH proxy");
-        throw new ProviderException("not implemented", null);
+
+        String host = callbacks.loadExtensionSetting(SSH_HOST_KEY);
+        String portStr = callbacks.loadExtensionSetting(SSH_PORT_KEY);
+        String username = callbacks.loadExtensionSetting(SSH_AUTH_USERNAME_KEY);
+        String password = callbacks.loadExtensionSetting(SSH_AUTH_PASSWORD_KEY);
+        String localPortStr = callbacks.loadExtensionSetting(SSH_LOCALPORT_KEY);
+
+        int port, localPort;
+        try {
+            port = Integer.parseInt(portStr);
+            localPort = Integer.parseInt(localPortStr);
+        } catch (Exception e) {
+            throw new ProviderException("invalid port: " + e.getMessage(), e);
+        }
+
+        try {
+            tunnel = createSshTunnel(host, port, username, password, localPort);
+        } catch (Exception e) {
+            if (tunnel != null) {
+                tunnel.close();
+            }
+            throw new ProviderException("error creating SSH tunnel: " + e.getMessage(), e);
+        }
+
+        // TODO: get real addr
+        return new ProxySettings("127.0.0.1", localPortStr, "", "");
     }
 
     @Override
     public void destroyInstance() throws ProviderException {
         log("disconnecting SSH proxy");
-        throw new ProviderException("not implemented", null);
+        try {
+            if (tunnel != null) {
+                tunnel.close();
+            }
+        } catch (Exception e) {
+            throw new ProviderException("error stopping ssh client: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -303,6 +372,32 @@ public class SSHProvider extends Provider {
         });
 
         return panel;
+    }
+
+    private static SshTunnel createSshTunnel(String host, int port, String username, String password, int localPort)
+            throws IOException {
+        SshClient client = SshClient.setUpDefaultClient();
+        client.setForwardingFilter(AcceptAllForwardingFilter.INSTANCE);
+        client.setServerKeyVerifier(AcceptAllServerKeyVerifier.INSTANCE);
+        client.setHostConfigEntryResolver(HostConfigEntryResolver.EMPTY); // Needed to ignore default ~/.ssh/config
+        client.start();
+
+        ClientSession session = client.connect(username, host, port)
+                .verify()
+                .getSession();
+
+        // TODO: support key identity
+        session.addPasswordIdentity(password);
+
+        session.auth().verify();
+        if (!session.isAuthenticated()) { // TODO: not working
+            throw new IOException("Authentication failed: Invalid username or password.");
+        }
+
+        // TODO: get real localhost
+        session.startDynamicPortForwarding(new SshdSocketAddress("127.0.0.1", localPort));
+
+        return new SshTunnel(client, session);
     }
 
     private void setAuthType(String authType) {

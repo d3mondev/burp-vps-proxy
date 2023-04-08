@@ -12,6 +12,7 @@ repositories {
 
 dependencies {
     implementation 'org.json:json:20230227'
+    implementation 'org.apache.sshd:sshd-core:2.9.2'
     implementation 'com.jcraft:jsch:0.1.55'
     implementation 'net.portswigger.burp.extender:burp-extender-api:2.1'
     implementation 'com.myjeeva.digitalocean:digitalocean-api-client:2.17'

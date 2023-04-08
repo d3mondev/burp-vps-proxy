@@ -23,6 +23,7 @@ public class VPSProxy {
         addProvider(new AWSProvider(callbacks));
         addProvider(new DigitalOceanProvider(callbacks));
         addProvider(new LinodeProvider(callbacks));
+        addProvider(new SSHProvider(callbacks));
 
         optionsTab = new VPSProxyTab(this, providerMap);
         Logger.init(callbacks.getStdout(), optionsTab);
