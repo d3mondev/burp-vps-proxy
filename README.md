@@ -98,6 +98,14 @@ Ensure the API key has the Read/Write permission for "Linodes".
 
 Provisioning is done via SSH and the proxy is usually available as soon as the extension tells you.
 
+## SSH (experimental)
+
+![](assets/providers-ssh.png)
+
+The SSH provider enables the use of a remote SSH connection as a SOCKS5 proxy. Essentially, it performs the equivalent of `ssh -D` from within the VPS Proxy tab, adding extra convenience for users who prefer to use their own server.
+
+Currently, only password authentication is supported. Simply enter your host and credentials, and the extension will create a SOCKS5 proxy on the specified local port and configure Burp Suite to use it.
+
 # ⚖ Disclaimers & License
 
 The author and contributors of this extension expressly disclaim any liability for any costs, damages, or consequences resulting from the use of cloud providers in connection with this software.

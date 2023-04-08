@@ -115,7 +115,7 @@ public class VPSProxy {
     protected void restorePreviousProxy() {
         String config = callbacks.loadExtensionSetting(SettingsKeys.PROXY_SETTINGS);
         if (config != null) {
-            Logger.log("Setting proxy from previous session");
+            Logger.log("Restoring proxy from previous session");
             callbacks.loadConfigFromJson(config);
 
             Provider currentProvider = optionsTab.getSelectedProvider();

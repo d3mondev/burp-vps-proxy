@@ -83,6 +83,7 @@ public abstract class Provider {
 
         JSch jsch = new JSch();
 
+        // TODO: Retry when failing to connect
         Session session = jsch.getSession(username, ipAddress, 22);
         session.setPassword(password);
         session.setConfig("StrictHostKeyChecking", "no");

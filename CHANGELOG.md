@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Experimental SSH provider that enables the use of a remote SSH connection as a SOCKS5 proxy. It does the equivalent of `ssh -D` but from within the VPS Proxy tab. Only password authentication supported for the moment.
+
+### Changed
+- Provider base class now has a close() method that is called on the current provider whenever the extension is unloaded, whether the provider is active or not.
+- Provider base class now has a onRestore() method that is called when the extension is loaded and the provider is active.
+
 ## [1.0.0] - 2023-04-03
 
 ### Added
