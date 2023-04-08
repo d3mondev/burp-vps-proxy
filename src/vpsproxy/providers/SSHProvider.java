@@ -77,31 +77,8 @@ public class SSHProvider extends Provider {
 
     @Override
     public ProxySettings startInstance() throws ProviderException {
-        // TODO: support automatic reconnecting when extension is loaded
         log("connecting to SSH proxy");
-
-        String host = callbacks.loadExtensionSetting(SSH_HOST);
-        String portStr = callbacks.loadExtensionSetting(SSH_PORT);
-        String username = callbacks.loadExtensionSetting(SSH_AUTH_USERNAME);
-        String password = callbacks.loadExtensionSetting(SSH_AUTH_PASSWORD);
-        String localPortStr = callbacks.loadExtensionSetting(SSH_LOCALPORT);
-
-        int port, localPort;
-        try {
-            port = Integer.parseInt(portStr);
-            localPort = Integer.parseInt(localPortStr);
-        } catch (Exception e) {
-            throw new ProviderException("invalid port: " + e.getMessage(), e);
-        }
-
-        try {
-            tunnel = createSshTunnel(host, port, username, password, localPort);
-        } catch (Exception e) {
-            if (tunnel != null) {
-                tunnel.close();
-            }
-            throw new ProviderException("error creating SSH tunnel: " + e.getMessage(), e);
-        }
+        connect();
 
         return new ProxySettings(tunnel.getLocalHostname(), Integer.toString(tunnel.getLocalPort()), "", "");
     }
@@ -109,6 +86,11 @@ public class SSHProvider extends Provider {
     @Override
     public void destroyInstance() throws ProviderException {
         log("disconnecting SSH proxy");
+        close();
+    }
+
+    @Override
+    public void close() throws ProviderException {
         try {
             if (tunnel != null) {
                 tunnel.close();
@@ -116,6 +98,11 @@ public class SSHProvider extends Provider {
         } catch (Exception e) {
             throw new ProviderException("error stopping ssh client: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public void onRestore() throws ProviderException {
+        connect();
     }
 
     @Override
@@ -320,6 +307,31 @@ public class SSHProvider extends Provider {
         });
 
         return panel;
+    }
+
+    private void connect() throws ProviderException {
+        String host = callbacks.loadExtensionSetting(SSH_HOST);
+        String portStr = callbacks.loadExtensionSetting(SSH_PORT);
+        String username = callbacks.loadExtensionSetting(SSH_AUTH_USERNAME);
+        String password = callbacks.loadExtensionSetting(SSH_AUTH_PASSWORD);
+        String localPortStr = callbacks.loadExtensionSetting(SSH_LOCALPORT);
+
+        int port, localPort;
+        try {
+            port = Integer.parseInt(portStr);
+            localPort = Integer.parseInt(localPortStr);
+        } catch (Exception e) {
+            throw new ProviderException("invalid port: " + e.getMessage(), e);
+        }
+
+        try {
+            tunnel = createSshTunnel(host, port, username, password, localPort);
+        } catch (Exception e) {
+            if (tunnel != null) {
+                tunnel.close();
+            }
+            throw new ProviderException("error creating SSH tunnel: " + e.getMessage(), e);
+        }
     }
 
     private static SshTunnel createSshTunnel(String host, int port, String username, String password, int localPort)

@@ -70,7 +70,7 @@ public class DigitalOceanProvider extends Provider {
             droplet.setTags(tags);
 
             String password = RandomString.generate(12);
-            droplet.setUserData(getProvisioningScript(password));
+            droplet.setUserData(getProvisioningScript(password, false));
 
             droplet = client.createDroplet(droplet);
 

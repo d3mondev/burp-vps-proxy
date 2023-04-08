@@ -124,7 +124,7 @@ public class LinodeProvider extends Provider {
             String ipAddress = getInstanceIpAddress(instanceId);
 
             waitForStatus(instanceId, "running", LINODE_TIMEOUT);
-            runProvisioningScript(ipAddress, "root", rootPassword, getProvisioningScript(password));
+            executeRemoteProvisioningScript(ipAddress, "root", rootPassword, getProvisioningScript(password, false));
 
             logf("instance %s created", instanceName);
             return new ProxySettings(ipAddress, "1080", "burp-vps-proxy", password);

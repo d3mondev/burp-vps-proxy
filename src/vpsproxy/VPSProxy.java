@@ -39,17 +39,19 @@ public class VPSProxy {
         String destroyProxySetting = callbacks.loadExtensionSetting(SettingsKeys.DESTROY_PROXY_ON_EXIT);
         boolean destroyProxy = destroyProxySetting == null || Boolean.parseBoolean(destroyProxySetting);
 
-        if (!destroyProxy)
-            return;
-
         Provider currentProvider = optionsTab.getSelectedProvider();
-        if (currentProvider != null) {
-            try {
+        if (currentProvider == null) {
+            return;
+        }
+
+        try {
+            if (destroyProxy) {
                 destroyInstance(currentProvider);
-            } catch (ProviderException e) {
-            } catch (Exception e) {
-                Logger.log(String.format("Unhandled exception: %s", e.getMessage()));
             }
+            currentProvider.close();
+        } catch (ProviderException e) {
+        } catch (Exception e) {
+            Logger.log(String.format("Unhandled exception: %s", e.getMessage()));
         }
     }
 
@@ -115,6 +117,16 @@ public class VPSProxy {
         if (config != null) {
             Logger.log("Setting proxy from previous session");
             callbacks.loadConfigFromJson(config);
+
+            Provider currentProvider = optionsTab.getSelectedProvider();
+            if (currentProvider != null) {
+                try {
+                    currentProvider.onRestore();
+                } catch (ProviderException e) {
+                } catch (Exception e) {
+                    Logger.log(String.format("Unhandled exception: %s", e.getMessage()));
+                }
+            }
         }
     }
 

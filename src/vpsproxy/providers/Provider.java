@@ -3,6 +3,7 @@ package vpsproxy.providers;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Scanner;
 import javax.swing.JComponent;
 import java.nio.charset.StandardCharsets;
@@ -16,11 +17,16 @@ import vpsproxy.Logger;
 import vpsproxy.ProxySettings;
 
 public abstract class Provider {
-    private static final String proxyUsername = "burp-vps-proxy";
-    private static final String proxyPort = "1080";
+    public class ProviderException extends Exception {
+        public ProviderException(String message, Throwable cause) {
+            super(getName() + ": " + message, cause);
+        }
+    }
 
+    private static final String PROXY_USERNAME = "burp-vps-proxy";
+    private static final String PROXY_PORT = "1080";
     private static final String SCRIPT_RESOURCE_PATH = "provisioning.sh";
-    private static String SCRIPT;
+    private static String script;
     private static boolean debug = false;
 
     public abstract String getName();
@@ -31,41 +37,47 @@ public abstract class Provider {
 
     public abstract JComponent getUI();
 
-    protected void log(String message) {
+    public void close() throws ProviderException {
+    }
+
+    public void onRestore() throws ProviderException {
+    }
+
+    protected final void log(String message) {
         Logger.log(String.format("%s: %s", getName(), message));
     }
 
-    protected void logf(String format, Object... args) {
+    protected final void logf(String format, Object... args) {
         format = getName() + ": " + format;
         Logger.log(String.format(format, args));
     }
 
-    protected ProxySettings createProxySettings(String publicIpAddress, String password) {
-        return new ProxySettings(publicIpAddress, proxyPort, proxyUsername, password);
+    protected final ProxySettings createProxySettings(String publicIpAddress, String password) {
+        return new ProxySettings(publicIpAddress, PROXY_PORT, PROXY_USERNAME, password);
     }
 
-    public class ProviderException extends Exception {
-        public ProviderException(String message, Throwable cause) {
-            super(getName() + ": " + message, cause);
-        }
-    }
-
-    protected String getProvisioningScript(String password) throws IOException {
-        if (SCRIPT == null) {
+    protected final String getProvisioningScript(String password, boolean base64) throws IOException {
+        if (script == null) {
             InputStream inputStream = getClass().getClassLoader().getResourceAsStream(SCRIPT_RESOURCE_PATH);
             if (inputStream != null) {
                 try (Scanner scanner = new Scanner(inputStream, "UTF-8")) {
-                    SCRIPT = scanner.useDelimiter("\\A").next();
+                    script = scanner.useDelimiter("\\A").next();
                 }
             } else {
                 throw new IOException(String.format("Resource '%s' not found", SCRIPT_RESOURCE_PATH));
             }
         }
 
-        return SCRIPT.replaceAll("CHANGEME", password);
+        String finalScript = script.replaceAll("CHANGEME", password);
+        if (base64) {
+            return Base64.getEncoder().encodeToString(finalScript.getBytes());
+        } else {
+            return finalScript;
+        }
     }
 
-    protected void runProvisioningScript(String ipAddress, String username, String password, String provisioningScript)
+    protected final void executeRemoteProvisioningScript(String ipAddress, String username, String password,
+            String provisioningScript)
             throws Exception {
         log("provisioning via ssh");
 

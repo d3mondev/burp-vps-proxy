@@ -3,7 +3,6 @@ package vpsproxy.providers;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Optional;
@@ -28,33 +27,33 @@ public class AWSProvider extends Provider {
     final private String AWS_SECRET_KEY_SETTING = "ProviderAWSSecretKey";
     final private String AWS_REGION_SETTING = "ProviderAWSRegion";
     final private String[] AWS_REGIONS = {
-        "us-east-2",
-        "us-east-1",
-        "us-west-1",
-        "us-west-2",
-        "af-south-1",
-        "ap-east-1",
-        "ap-south-2",
-        "ap-southeast-3",
-        "ap-southeast-4",
-        "ap-south-1",
-        "ap-northeast-3",
-        "ap-northeast-2",
-        "ap-southeast-1",
-        "ap-southeast-2",
-        "ap-northeast-1",
-        "ca-central-1",
-        "eu-central-1",
-        "eu-west-1",
-        "eu-west-2",
-        "eu-south-1",
-        "eu-west-3",
-        "eu-south-2",
-        "eu-north-1",
-        "eu-central-2",
-        "me-south-1",
-        "me-central-1",
-        "sa-east-1",
+            "us-east-2",
+            "us-east-1",
+            "us-west-1",
+            "us-west-2",
+            "af-south-1",
+            "ap-east-1",
+            "ap-south-2",
+            "ap-southeast-3",
+            "ap-southeast-4",
+            "ap-south-1",
+            "ap-northeast-3",
+            "ap-northeast-2",
+            "ap-southeast-1",
+            "ap-southeast-2",
+            "ap-northeast-1",
+            "ca-central-1",
+            "eu-central-1",
+            "eu-west-1",
+            "eu-west-2",
+            "eu-south-1",
+            "eu-west-3",
+            "eu-south-2",
+            "eu-north-1",
+            "eu-central-2",
+            "me-south-1",
+            "me-central-1",
+            "sa-east-1",
     };
 
     private IBurpExtenderCallbacks callbacks;
@@ -85,7 +84,7 @@ public class AWSProvider extends Provider {
         String password = RandomString.generate(12);
         String script;
         try {
-            script = getProvisioningScript(password);
+            script = getProvisioningScript(password, true);
         } catch (IOException e) {
             throw new ProviderException(String.format("error loading provisioning script: %s", e.getMessage()), e);
         }
@@ -99,37 +98,38 @@ public class AWSProvider extends Provider {
 
         String securityGroupId;
         try {
-            securityGroupId = createSecurityGroup("burp-vps-proxy", "Allow traffic to port 1080 for the Burp SOCKS Proxy");
+            securityGroupId = createSecurityGroup("burp-vps-proxy",
+                    "Allow traffic to port 1080 for the Burp SOCKS Proxy");
         } catch (ProviderException e) {
             throw e;
         }
 
         String instanceName = String.format("burp-vps-proxy-%s", RandomString.generate(4));
         Tag nameTag = Tag.builder()
-            .key("Name")
-            .value(instanceName)
-            .build();
+                .key("Name")
+                .value(instanceName)
+                .build();
 
         String tagValue = callbacks.loadExtensionSetting(SettingsKeys.BURP_INSTANCE_ID);
         Tag proxyTag = Tag.builder()
-            .key(INSTANCE_TAG)
-            .value(tagValue)
-            .build();
+                .key(INSTANCE_TAG)
+                .value(tagValue)
+                .build();
 
         TagSpecification tagSpecification = TagSpecification.builder()
-            .resourceType("instance")
-            .tags(nameTag, proxyTag)
-            .build();
+                .resourceType("instance")
+                .tags(nameTag, proxyTag)
+                .build();
 
         RunInstancesRequest runRequest = RunInstancesRequest.builder()
-            .instanceType(AWS_INSTANCE_TYPE)
-            .maxCount(1)
-            .minCount(1)
-            .imageId(amiId)
-            .userData(script)
-            .tagSpecifications(tagSpecification)
-            .securityGroupIds(securityGroupId)
-            .build();
+                .instanceType(AWS_INSTANCE_TYPE)
+                .maxCount(1)
+                .minCount(1)
+                .imageId(amiId)
+                .userData(script)
+                .tagSpecifications(tagSpecification)
+                .securityGroupIds(securityGroupId)
+                .build();
 
         RunInstancesResponse runResponse;
         String instanceId;
@@ -142,8 +142,8 @@ public class AWSProvider extends Provider {
         }
 
         DescribeInstancesRequest describeRequest = DescribeInstancesRequest.builder()
-            .instanceIds(instanceId)
-            .build();
+                .instanceIds(instanceId)
+                .build();
 
         DescribeInstancesResponse describeResponse;
         try {
@@ -168,16 +168,16 @@ public class AWSProvider extends Provider {
         String tagValue = callbacks.loadExtensionSetting(SettingsKeys.BURP_INSTANCE_ID);
 
         DescribeInstancesRequest describeRequest = DescribeInstancesRequest.builder()
-            .filters(
-                Filter.builder()
-                    .name("tag:" + INSTANCE_TAG)
-                    .values(tagValue)
-                    .build(),
-                Filter.builder()
-                    .name("instance-state-name")
-                    .values("pending", "running", "rebooting", "stopping", "stopped")
-                    .build())
-            .build();
+                .filters(
+                        Filter.builder()
+                                .name("tag:" + INSTANCE_TAG)
+                                .values(tagValue)
+                                .build(),
+                        Filter.builder()
+                                .name("instance-state-name")
+                                .values("pending", "running", "rebooting", "stopping", "stopped")
+                                .build())
+                .build();
 
         DescribeInstancesResponse describeResponse;
         try {
@@ -187,28 +187,28 @@ public class AWSProvider extends Provider {
         }
 
         describeResponse.reservations().stream()
-            .flatMap(reservation -> reservation.instances().stream())
-            .forEach(instance -> {
-                String instanceId = instance.instanceId();
-                String instanceName = "";
-                for (Tag tag : instance.tags()) {
-                    if (tag.key().equals("Name")) {
-                        instanceName = tag.value();
-                        break;
+                .flatMap(reservation -> reservation.instances().stream())
+                .forEach(instance -> {
+                    String instanceId = instance.instanceId();
+                    String instanceName = "";
+                    for (Tag tag : instance.tags()) {
+                        if (tag.key().equals("Name")) {
+                            instanceName = tag.value();
+                            break;
+                        }
                     }
-                }
 
-                TerminateInstancesRequest terminateRequest = TerminateInstancesRequest.builder()
-                    .instanceIds(instanceId)
-                    .build();
+                    TerminateInstancesRequest terminateRequest = TerminateInstancesRequest.builder()
+                            .instanceIds(instanceId)
+                            .build();
 
-                try {
-                    ec2Client.terminateInstances(terminateRequest);
-                    logf("instance %s deleted", instanceName);
-                } catch (Exception e) {
-                    logf("error deleting instance '%s': %s", instanceName, e.getMessage());
-                }
-            });
+                    try {
+                        ec2Client.terminateInstances(terminateRequest);
+                        logf("instance %s deleted", instanceName);
+                    } catch (Exception e) {
+                        logf("error deleting instance '%s': %s", instanceName, e.getMessage());
+                    }
+                });
     }
 
     @Override
@@ -229,7 +229,8 @@ public class AWSProvider extends Provider {
 
         JPasswordField awsSecretKeyPasswordField = new JPasswordField();
         awsSecretKeyPasswordField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        awsSecretKeyPasswordField.setPreferredSize(new Dimension(200, awsSecretKeyPasswordField.getPreferredSize().height));
+        awsSecretKeyPasswordField
+                .setPreferredSize(new Dimension(200, awsSecretKeyPasswordField.getPreferredSize().height));
         awsSecretKeyPasswordField.setText(callbacks.loadExtensionSetting(AWS_SECRET_KEY_SETTING));
 
         JLabel awsRegionLabel = new JLabel("Region:");
@@ -264,10 +265,12 @@ public class AWSProvider extends Provider {
             public void insertUpdate(DocumentEvent e) {
                 saveSetting();
             }
+
             @Override
             public void removeUpdate(DocumentEvent e) {
                 saveSetting();
             }
+
             @Override
             public void changedUpdate(DocumentEvent e) {
                 saveSetting();
@@ -284,10 +287,12 @@ public class AWSProvider extends Provider {
             public void insertUpdate(DocumentEvent e) {
                 saveSetting();
             }
+
             @Override
             public void removeUpdate(DocumentEvent e) {
                 saveSetting();
             }
+
             @Override
             public void changedUpdate(DocumentEvent e) {
                 saveSetting();
@@ -315,12 +320,6 @@ public class AWSProvider extends Provider {
         return panel;
     }
 
-    @Override
-    protected String getProvisioningScript(String password) throws IOException {
-        String script = super.getProvisioningScript(password);
-        return Base64.getEncoder().encodeToString(script.getBytes());
-    }
-
     private Ec2Client createClient() throws ProviderException {
         // Load the AWS keys from settings
         String awsAccessKey = callbacks.loadExtensionSetting(AWS_ACCESS_KEY_SETTING);
@@ -337,9 +336,9 @@ public class AWSProvider extends Provider {
             // Create the client
             AwsCredentials credentials = AwsBasicCredentials.create(awsAccessKey, awsSecretKey);
             ec2Client = Ec2Client.builder()
-                .region(region)
-                .credentialsProvider(() -> credentials)
-                .build();
+                    .region(region)
+                    .credentialsProvider(() -> credentials)
+                    .build();
         } catch (Exception e) {
             throw new ProviderException(String.format("error creating AWS client: %s", e.getMessage()), e);
         }
@@ -350,21 +349,21 @@ public class AWSProvider extends Provider {
     private String getAmiId(String osType, String region) throws ProviderException {
         // Filter by name
         Filter osFilter = Filter.builder()
-            .name("name")
-            .values(osType + "-*")
-            .build();
+                .name("name")
+                .values(osType + "-*")
+                .build();
 
         // Filter by architecture
         Filter architectureFilter = Filter.builder()
-            .name("architecture")
-            .values(AWS_INSTANCE_ARCH)
-            .build();
+                .name("architecture")
+                .values(AWS_INSTANCE_ARCH)
+                .build();
 
         // Find the requested image
         DescribeImagesRequest describeImagesRequest = DescribeImagesRequest.builder()
-            .owners("136693071363") // Debian AMI owner ID
-            .filters(osFilter, architectureFilter)
-            .build();
+                .owners("136693071363") // Debian AMI owner ID
+                .filters(osFilter, architectureFilter)
+                .build();
 
         DescribeImagesResponse describeImagesResponse;
         try {
@@ -374,7 +373,7 @@ public class AWSProvider extends Provider {
         }
 
         Optional<Image> latestImage = describeImagesResponse.images().stream()
-            .max(Comparator.comparing(Image::creationDate));
+                .max(Comparator.comparing(Image::creationDate));
 
         // Return the most recent image found
         return latestImage.map(Image::imageId).orElse(null);
@@ -390,8 +389,8 @@ public class AWSProvider extends Provider {
         }
 
         Optional<SecurityGroup> securityGroup = describeResponse.securityGroups().stream()
-            .filter(sg -> sg.groupName().equals(groupName))
-            .findFirst();
+                .filter(sg -> sg.groupName().equals(groupName))
+                .findFirst();
 
         if (securityGroup.isPresent()) {
             // Security group already exists, return its ID
@@ -400,9 +399,9 @@ public class AWSProvider extends Provider {
 
         // Create the security group
         CreateSecurityGroupRequest createRequest = CreateSecurityGroupRequest.builder()
-            .groupName(groupName)
-            .description(groupDescription)
-            .build();
+                .groupName(groupName)
+                .description(groupDescription)
+                .build();
 
         CreateSecurityGroupResponse createResponse;
         try {
@@ -415,23 +414,24 @@ public class AWSProvider extends Provider {
 
         // Add a rule to the security group that allows traffic to port 1080
         IpRange ipRange = IpRange.builder()
-            .cidrIp("0.0.0.0/0")
-            .build();
+                .cidrIp("0.0.0.0/0")
+                .build();
         IpPermission ipPermission = IpPermission.builder()
-            .ipProtocol("tcp")
-            .fromPort(1080)
-            .toPort(1080)
-            .ipRanges(ipRange)
-            .build();
+                .ipProtocol("tcp")
+                .fromPort(1080)
+                .toPort(1080)
+                .ipRanges(ipRange)
+                .build();
         AuthorizeSecurityGroupIngressRequest authorizeRequest = AuthorizeSecurityGroupIngressRequest.builder()
-            .groupId(groupId)
-            .ipPermissions(Collections.singletonList(ipPermission))
-            .build();
+                .groupId(groupId)
+                .ipPermissions(Collections.singletonList(ipPermission))
+                .build();
 
         try {
             ec2Client.authorizeSecurityGroupIngress(authorizeRequest);
         } catch (Exception e) {
-            throw new ProviderException(String.format("error authorizing security group ingress: %s", e.getMessage()), e);
+            throw new ProviderException(String.format("error authorizing security group ingress: %s", e.getMessage()),
+                    e);
         }
 
         // Return the ID of the security group
