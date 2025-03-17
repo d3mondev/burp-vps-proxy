@@ -43,12 +43,10 @@ public abstract class Provider {
      * Starts a new VPS instance on the provider.
      *
      * The instance should have a tag that allows the destroyInstance() method to
-     * delete
-     * all the instances created by the extension.
+     * delete all the instances created by the extension.
      *
-     * Additionnally, the startInstance method should ensure that the VPS is
-     * correctly configured as
-     * a SOCKS5 proxy with a username and adequate password.
+     * Additionally, the startInstance method should configure the VPS as a SOCKS5
+     * proxy with a username and adequate password.
      *
      * @return The settings of the newly-created proxy
      * @throws ProviderException
@@ -59,9 +57,8 @@ public abstract class Provider {
      * Destroys all the instances started by the extension on the provider.
      *
      * All instances that have been tagged by the startInstance method should be
-     * destroyed.
-     * This ensures that instances failing to start correctly are also removed
-     * from the provider, helping payment for orphaned instances.
+     * destroyed. This ensures that instances failing to start correctly are also
+     * removed from the provider, helping prevent payment for orphaned instances.
      *
      * Extra caution is necessary to ensure ONLY tagged instances are deleted,
      * as deleting active VPS instances in the account may occur otherwise.
@@ -144,7 +141,7 @@ public abstract class Provider {
 
         JSch jsch = new JSch();
 
-        // TODO: Retry when failing to connect
+        // TODO: Retry when failing to connect as the VPS could still be provisioning
         Session session = jsch.getSession(username, ipAddress, 22);
         session.setPassword(password);
         session.setConfig("StrictHostKeyChecking", "no");
